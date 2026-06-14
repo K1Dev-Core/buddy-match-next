@@ -1,8 +1,15 @@
 "use client";
 
 import { PrimaryButton } from "@/components/shared/primary-button";
-import { getSupabaseBrowserClient, hasSupabaseBrowserEnv } from "@/lib/supabase/browser";
-import { useMemo, useState } from "react";
+import { juniorRecordsByCode4 } from "@/data/auth/juniors";
+import { Clock, UserCheck, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+
+type JuniorAssignment = {
+  junior_id: string;
+  junior_code4: string;
+  assigned_at: string;
+};
 
 const starterHints = [""];
 
@@ -12,11 +19,27 @@ export function SeniorDashboard() {
   const [hints, setHints] = useState(starterHints);
   const [savedAt, setSavedAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [assignments, setAssignments] = useState<JuniorAssignment[]>([]);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
-  const filledHintCount = useMemo(
-    () => hints.filter((hint) => hint.trim()).length,
-    [hints]
-  );
+  const filledHintCount = hints.filter((hint) => hint.trim()).length;
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        const res = await fetch("/api/senior/assignments");
+        const data = await res.json();
+        if (Array.isArray(data.assignments)) {
+          setAssignments(data.assignments);
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        setIsLoadingAssignments(false);
+      }
+    };
+    fetchAssignments();
+  }, []);
 
   const saveProfile = async () => {
     if (!fullName.trim() || filledHintCount < 1 || isSaving) {
@@ -48,6 +71,11 @@ export function SeniorDashboard() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const juniorName = (code4: string) => {
+    const record = juniorRecordsByCode4.get(code4);
+    return record ? record.fullName.replace(/^(นาย|นางสาว)/, "").trim() : null;
   };
 
   return (
@@ -121,6 +149,38 @@ export function SeniorDashboard() {
               {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูลรุ่นพี่"}
             </PrimaryButton>
             {savedAt ? <p className="senior-saved-note">บันทึกล่าสุด {savedAt}</p> : null}
+          </div>
+        </div>
+
+        <div className="senior-card">
+          <div className="headline-stack compact">
+            <p className="eyebrow warm">Junior List</p>
+            <h1>รายชื่อรุ่นน้อง</h1>
+          </div>
+          <div className="junior-list-section">
+            {isLoadingAssignments ? (
+              <p className="senior-saved-note">กำลังโหลด...</p>
+            ) : assignments.length > 0 ? (
+              <div className="junior-list">
+                {assignments.map((a) => (
+                  <div key={a.junior_id} className="junior-list-item">
+                    <UserCheck size={18} strokeWidth={2} />
+                    <span>
+                      {juniorName(a.junior_code4) ?? "น้องรหัส " + a.junior_code4}
+                    </span>
+                    <span className="junior-list-date">
+                      {new Date(a.assigned_at).toLocaleDateString("th-TH")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="senior-waiting">
+                <Clock size={32} strokeWidth={1.5} />
+                <p>กำลังรอน้องมาหา...</p>
+                <span>เมื่อมีน้องกรอกรหัสและยืนยันตัวตนแล้ว ระบบจะสุ่มให้อัตโนมัติ</span>
+              </div>
+            )}
           </div>
         </div>
       </section>

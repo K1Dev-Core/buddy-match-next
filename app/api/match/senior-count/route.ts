@@ -14,14 +14,11 @@ export async function GET() {
     const { data, error } = await supabase.rpc("get_senior_count");
 
     if (error) {
-      return NextResponse.json(
-        { count: 0, error: error.message },
-        { status: 500 }
-      );
+      return NextResponse.json({ count: 0 });
     }
 
     return NextResponse.json({ count: data ?? 0 });
   } catch {
-    return NextResponse.json({ count: 0 }, { status: 500 });
+    return NextResponse.json({ count: 0 });
   }
 }
