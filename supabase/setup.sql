@@ -255,7 +255,46 @@ end;
 $$;
 
 -- ============================================
--- 8. RPC: clear_assignment
+-- 8. RPC: get_matching_open, set_matching_open
+-- ใช้เปิด/ปิดระบบสุ่มพี่รหัสจากหน้า Admin
+-- ============================================
+create table if not exists public.admin_settings (
+  id int primary key default 1,
+  matching_open boolean not null default true,
+  constraint single_row check (id = 1)
+);
+insert into public.admin_settings (id, matching_open) values (1, true) on conflict (id) do nothing;
+
+create or replace function public.get_matching_open()
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_open boolean;
+begin
+  select matching_open into v_open from public.admin_settings where id = 1;
+  return coalesce(v_open, true);
+end;
+$$;
+
+create or replace function public.set_matching_open(
+  p_open boolean
+) returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.admin_settings (id, matching_open) values (1, p_open)
+  on conflict (id) do update set matching_open = p_open;
+  return json_build_object('status', 'ok', 'open', p_open);
+end;
+$$;
+
+-- ============================================
+-- 9. RPC: clear_assignment
 -- ใช้ใน Admin Dashboard เพื่อลบน้องออกจากพี่
 -- ============================================
 create or replace function public.clear_assignment(
@@ -272,13 +311,13 @@ end;
 $$;
 
 -- ============================================
--- 9. DISABLE RLS (ใช้ security definer RPC แทน)
+-- 10. DISABLE RLS (ใช้ security definer RPC แทน)
 -- ============================================
 alter table public.seniors disable row level security;
 alter table public.assignments disable row level security;
 
 -- ============================================
--- 10. GRANT PERMISSIONS
+-- 11. GRANT PERMISSIONS
 -- ให้ anon key เรียก RPC และอ่าน/เขียน table ได้
 -- ============================================
 grant usage on schema public to anon;
@@ -291,3 +330,5 @@ grant execute on function public.upsert_senior_profile(text, text, text, text[],
 grant execute on function public.get_all_seniors() to anon;
 grant execute on function public.get_admin_stats() to anon;
 grant execute on function public.clear_assignment(text) to anon;
+grant execute on function public.get_matching_open() to anon;
+grant execute on function public.set_matching_open(boolean) to anon;

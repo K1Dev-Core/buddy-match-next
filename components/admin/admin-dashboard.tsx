@@ -5,7 +5,7 @@ import { usePageTransition } from "@/components/layout/use-page-transition";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
 import { useToast } from "@/components/shared/toaster";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Home, Search, Shield, Trash2, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, Home, Lock, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users } from "lucide-react";
 
 type SeniorInfo = {
   id: string;
@@ -38,14 +38,22 @@ export function AdminDashboard() {
   const [clearingId, setClearingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "assigned" | "free">("all");
+  const [matchingOpen, setMatchingOpen] = useState(true);
+  const [togglingStatus, setTogglingStatus] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [seniorsRes, statsRes] = await Promise.all([
+      const [seniorsRes, statsRes, statusRes] = await Promise.all([
         fetch("/api/admin/seniors"),
         fetch("/api/admin/stats"),
+        fetch("/api/admin/matching-status"),
       ]);
+
+      if (statusRes.ok) {
+        const d = await statusRes.json();
+        setMatchingOpen(d.open);
+      }
 
       if (seniorsRes.ok) {
         const data = await seniorsRes.json();
@@ -98,6 +106,28 @@ export function AdminDashboard() {
     const record = juniorRecordsByCode4.get(code4);
     if (!record) return null;
     return record.fullName.replace(/^(นาย|นางสาว)/, "").trim();
+  };
+
+  const toggleMatching = async () => {
+    setTogglingStatus(true);
+    try {
+      const res = await fetch("/api/admin/matching-status", {
+        body: JSON.stringify({ open: !matchingOpen }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setMatchingOpen(d.open);
+        toast(d.open ? "เปิดระบบสุ่มพี่รหัสแล้ว" : "ปิดระบบสุ่มพี่รหัสแล้ว", "success");
+      } else {
+        toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
+    } finally {
+      setTogglingStatus(false);
+    }
   };
 
   const hintCount = (hints: string[]) =>
@@ -177,6 +207,24 @@ export function AdminDashboard() {
                   <span className="admin-stat-label">ยังไม่มีน้อง</span>
                 </div>
               </div>
+            </div>
+
+            <div className="admin-status-toggle">
+              <div className="admin-toggle-info">
+                <span className="admin-toggle-label">ระบบสุ่มพี่รหัส</span>
+                <span className={`admin-toggle-badge ${matchingOpen ? "open" : "closed"}`}>
+                  {matchingOpen ? "เปิด" : "ปิด"}
+                </span>
+              </div>
+              <button
+                className={`admin-toggle-switch ${matchingOpen ? "is-on" : "is-off"}`}
+                disabled={togglingStatus}
+                onClick={toggleMatching}
+                role="switch"
+                aria-checked={matchingOpen}
+              >
+                <span className="admin-toggle-knob" />
+              </button>
             </div>
 
             <div className="admin-tip">

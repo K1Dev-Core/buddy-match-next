@@ -7,18 +7,27 @@ import { SeniorCountBadge } from "@/components/home/senior-count-badge";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { encodeToken } from "@/lib/token";
 import { playSound } from "@/lib/sound";
-import { Search } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Search, Lock } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export function OtpFlow() {
   const { navigate } = usePageTransition();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [matchingOpen, setMatchingOpen] = useState(true);
+  const [statusLoaded, setStatusLoaded] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const joinedCode = useMemo(() => digits.join(""), [digits]);
   const isReady = joinedCode.length === 4;
+
+  useEffect(() => {
+    fetch("/api/match/status")
+      .then((r) => r.json())
+      .then((d) => { setMatchingOpen(d.open); setStatusLoaded(true); })
+      .catch(() => { setMatchingOpen(true); setStatusLoaded(true); });
+  }, []);
   const candidate = useMemo(
     () => juniorRecordsByCode4.get(joinedCode) ?? null,
     [joinedCode],
@@ -98,13 +107,19 @@ export function OtpFlow() {
           ))}
         </div>
         <div className="action-stack">
+          {statusLoaded && !matchingOpen ? (
+            <div className="system-closed-banner">
+              <Lock size={20} strokeWidth={2.2} />
+              <span>ตอนนี้ระบบปิดการสุ่มพี่รหัสอยู่ กรุณารอจนกว่าผู้ดูแลจะเปิดระบบอีกครั้ง</span>
+            </div>
+          ) : null}
           <PrimaryButton
             onClick={() => submit(joinedCode)}
-            disabled={!isReady || isLoading}
+            disabled={!isReady || isLoading || (statusLoaded && !matchingOpen)}
             fullWidth
             icon={<Search size={18} strokeWidth={2.4} />}
           >
-            {isLoading ? "กำลังตรวจสอบ..." : "ค้นหา"}
+            {isLoading ? "กำลังตรวจสอบ..." : !statusLoaded ? "กำลังโหลด..." : !matchingOpen ? "ระบบปิดอยู่" : "ค้นหา"}
           </PrimaryButton>
         </div>
         <SeniorCountBadge />

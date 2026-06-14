@@ -37,6 +37,16 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
 
     const run = async () => {
       try {
+        const statusRes = await fetch("/api/match/status");
+        const statusData = await statusRes.json();
+        if (!statusData.open) {
+          setMatchingState({
+            message: "ระบบปิดการสุ่มพี่รหัสอยู่ กรุณารอจนกว่าผู้ดูแลจะเปิดระบบอีกครั้ง",
+            status: "error"
+          });
+          return;
+        }
+
         const response = await fetch("/api/match/assign", {
           body: JSON.stringify({ juniorCode4: code, juniorId }),
           headers: { "Content-Type": "application/json" },
