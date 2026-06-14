@@ -334,49 +334,54 @@ export function AdminDashboard() {
             </div>
 
             {selectedSenior ? (
-              <div className="admin-detail-panel">
-                <div className="admin-detail-header">
-                  <h2>{selectedSenior.fullName}</h2>
+              <div className="modal-overlay" onClick={() => setSelectedSenior(null)}>
+                <div className="admin-modal-card" onClick={(e) => e.stopPropagation()}>
+                  <div className="admin-detail-header">
+                    <h2>{selectedSenior.fullName}</h2>
+                    <button className="ghost-button small" onClick={() => setSelectedSenior(null)}>
+                      ปิด
+                    </button>
+                  </div>
                   {selectedSenior.isAdmin ? (
                     <span className="admin-badge">แอดมิน</span>
                   ) : null}
-                </div>
-                <div className="admin-detail-grid">
-                  <div className="admin-detail-field">
-                    <span className="admin-detail-label">รหัสนักศึกษา</span>
-                    <span className="admin-detail-value">{selectedSenior.id}</span>
+                  <div className="admin-detail-grid">
+                    <div className="admin-detail-field">
+                      <span className="admin-detail-label">รหัสนักศึกษา</span>
+                      <span className="admin-detail-value">{selectedSenior.id}</span>
+                    </div>
+                    <div className="admin-detail-field">
+                      <span className="admin-detail-label">ช่องทางติดต่อ</span>
+                      <span className="admin-detail-value">
+                        {selectedSenior.contact || "-"}
+                      </span>
+                    </div>
+                    <div className="admin-detail-field">
+                      <span className="admin-detail-label">ข้อความต้อนรับ</span>
+                      <span className="admin-detail-value">
+                        {selectedSenior.greeting || "-"}
+                      </span>
+                    </div>
+                    <div className="admin-detail-field">
+                      <span className="admin-detail-label">สถานะ</span>
+                      <span className="admin-detail-value">
+                        {selectedSenior.juniorId
+                          ? `มีน้องแล้ว ${juniorName(selectedSenior.juniorCode4) ?? "รหัส " + selectedSenior.juniorCode4} (${selectedSenior.juniorId})`
+                          : "ยังไม่มีน้อง"}
+                      </span>
+                    </div>
+                    <div className="admin-detail-field">
+                      <span className="admin-detail-label">อัปเดตล่าสุด</span>
+                      <span className="admin-detail-value">{formatDate(selectedSenior.updatedAt)}</span>
+                    </div>
                   </div>
-                  <div className="admin-detail-field">
-                    <span className="admin-detail-label">ช่องทางติดต่อ</span>
-                    <span className="admin-detail-value">
-                      {selectedSenior.contact || "-"}
-                    </span>
-                  </div>
-                  <div className="admin-detail-field">
-                    <span className="admin-detail-label">ข้อความต้อนรับ</span>
-                    <span className="admin-detail-value">
-                      {selectedSenior.greeting || "-"}
-                    </span>
-                  </div>
-                  <div className="admin-detail-field">
-                    <span className="admin-detail-label">สถานะ</span>
-                    <span className="admin-detail-value">
-                      {selectedSenior.juniorId
-                        ? `มีน้องแล้ว ${juniorName(selectedSenior.juniorCode4) ?? "รหัส " + selectedSenior.juniorCode4} (${selectedSenior.juniorId})`
-                        : "ยังไม่มีน้อง"}
-                    </span>
-                  </div>
-                  <div className="admin-detail-field">
-                    <span className="admin-detail-label">อัปเดตล่าสุด</span>
-                    <span className="admin-detail-value">{formatDate(selectedSenior.updatedAt)}</span>
-                  </div>
-                </div>
-                <div className="admin-detail-hints">
-                  <span className="admin-detail-label">คำใบ้ ({hintCount(selectedSenior.hints)} ข้อ)</span>
-                  <div className="admin-hint-list">
-                    {selectedSenior.hints.filter((h) => h.trim()).map((hint, i) => (
-                      <div key={i} className="admin-hint-item">{hint}</div>
-                    ))}
+                  <div className="admin-detail-hints">
+                    <span className="admin-detail-label">คำใบ้ ({hintCount(selectedSenior.hints)} ข้อ)</span>
+                    <div className="admin-hint-list">
+                      {selectedSenior.hints.filter((h) => h.trim()).map((hint, i) => (
+                        <div key={i} className="admin-hint-item">{hint}</div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>

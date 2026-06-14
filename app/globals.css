@@ -2187,6 +2187,21 @@ button {
   box-shadow: 0 2px 8px rgba(28, 28, 24, 0.06);
 }
 
+.admin-modal-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  width: min(calc(100% - 32px), 480px);
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.admin-modal-card .admin-detail-header {
+  justify-content: space-between;
+}
+
 .admin-detail-header {
   display: flex;
   align-items: center;
