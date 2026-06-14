@@ -9,7 +9,7 @@ type SeniorAuthModalProps = {
   isOpen: boolean;
   isSignedIn: boolean;
   onClose: () => void;
-  onLogout: () => void;
+  onLogout?: () => void;
   onLogin: () => void;
   userEmail: string;
 };
@@ -45,9 +45,11 @@ export function SeniorAuthModal({
               <button className="ghost-button" onClick={onClose}>
                 ปิด
               </button>
-              <button className="primary-button guess-submit-button" onClick={onLogout}>
-                ออกจากระบบ
-              </button>
+              {onLogout ? (
+                <button className="primary-button guess-submit-button" onClick={onLogout}>
+                  ออกจากระบบ
+                </button>
+              ) : null}
             </div>
           </div>
         ) : (

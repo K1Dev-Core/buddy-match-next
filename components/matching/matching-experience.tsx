@@ -1,9 +1,8 @@
 "use client";
 
 import { usePageTransition } from "@/components/layout/use-page-transition";
-import { encodeCode } from "@/lib/token";
+import { encodeCode, encodeToken } from "@/lib/token";
 import { getBuddyFromCode } from "@/lib/match";
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type MatchingExperienceProps = {
@@ -13,9 +12,11 @@ type MatchingExperienceProps = {
 
 export function MatchingExperience({ code, juniorId }: MatchingExperienceProps) {
   const { navigate } = usePageTransition();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   const { buddy, code: safeCode } = useMemo(() => getBuddyFromCode(code), [code]);
   const [progress, setProgress] = useState(0);
-  const hasNavigatedRef = useRef(false);
 
   const progressRadius = 132;
   const progressCircumference = 2 * Math.PI * progressRadius;
@@ -25,47 +26,35 @@ export function MatchingExperience({ code, juniorId }: MatchingExperienceProps) 
   const loadingCopy = "Finding the perfect senior buddy to help you navigate campus life.";
 
   useEffect(() => {
-    const target = 100;
-    let frame = 0;
-    let startedAt = 0;
+    const startTime = performance.now();
+    const duration = 7600;
+    let hasNavigated = false;
+    let rafId: number;
 
-    const animate = (timestamp: number) => {
-      if (!startedAt) {
-        startedAt = timestamp;
-      }
-
-      const elapsed = timestamp - startedAt;
-      const duration = 7600;
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
       const ratio = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - ratio, 3);
-      const next = Math.round(target * eased);
-
+      const next = Math.round(100 * eased);
       setProgress(next);
 
+      if (next >= 100 && !hasNavigated) {
+        hasNavigated = true;
+        setTimeout(() => {
+          const ct = juniorId ? encodeToken(safeCode, juniorId) : encodeCode(safeCode);
+          navigateRef.current(`/reveal?t=${ct}`);
+        }, 450);
+        return;
+      }
+
       if (ratio < 1) {
-        frame = window.requestAnimationFrame(animate);
+        rafId = requestAnimationFrame(tick);
       }
     };
 
-    frame = window.requestAnimationFrame(animate);
-
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  useEffect(() => {
-    if (progress < 100 || hasNavigatedRef.current) {
-      return;
-    }
-
-    hasNavigatedRef.current = true;
-
-    const timer = window.setTimeout(() => {
-      const ct = encodeCode(safeCode);
-      navigate(`/reveal?t=${ct}`);
-    }, 450);
-
-    return () => window.clearTimeout(timer);
-  }, [juniorId, navigate, progress, safeCode]);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [safeCode]);
 
   return (
     <section className="matching-shell">
@@ -82,11 +71,11 @@ export function MatchingExperience({ code, juniorId }: MatchingExperienceProps) 
                 className={`matching-orbit-floater matching-orbit-floater-${index + 1}`}
               >
                 <div className="matching-orbit-chip">
-                  <Image
+                  <img
                     src={logo.src}
                     alt={logo.alt}
-                    width={34}
-                    height={34}
+                    width="34"
+                    height="34"
                     className="matching-orbit-logo"
                   />
                 </div>

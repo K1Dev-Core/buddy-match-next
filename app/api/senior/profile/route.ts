@@ -2,12 +2,44 @@ import { isAllowedSeniorEmail } from "@/lib/auth/senior-allowlist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET() {
+  try {
+    const supabase = await getSupabaseServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user?.email) {
+      return NextResponse.json(null, { status: 401 });
+    }
+
+    const email = user.email;
+    if (!isAllowedSeniorEmail(email)) {
+      return NextResponse.json(null, { status: 403 });
+    }
+
+    const seniorId = email.replace("@msu.ac.th", "");
+    const { data, error } = await supabase
+      .from("seniors")
+      .select("full_name, contact, hints, greeting, updated_at, is_admin")
+      .eq("id", seniorId)
+      .maybeSingle();
+
+    if (error) {
+      return NextResponse.json(null, { status: 500 });
+    }
+
+    return NextResponse.json(data ?? null);
+  } catch {
+    return NextResponse.json(null, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const fullName = String(body.fullName ?? "").trim();
     const contact = String(body.contact ?? "").trim();
     const hints = (body.hints ?? []) as string[];
+    const greeting = String(body.greeting ?? "").trim();
 
     if (!fullName || hints.length === 0) {
       return NextResponse.json(
@@ -41,7 +73,8 @@ export async function POST(request: NextRequest) {
       p_id: seniorId,
       p_full_name: fullName,
       p_contact: contact,
-      p_hints: hints
+      p_hints: hints,
+      p_greeting: greeting
     });
 
     if (error) {

@@ -6,6 +6,7 @@ import { PrimaryButton } from "@/components/shared/primary-button";
 import { SeniorCountBadge } from "@/components/home/senior-count-badge";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { encodeToken } from "@/lib/token";
+import { playSound } from "@/lib/sound";
 import { Search } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
@@ -28,8 +29,11 @@ export function OtpFlow() {
     const nextDigits = [...digits];
     nextDigits[index] = nextValue;
     setDigits(nextDigits);
-    if (nextValue && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1]?.focus();
+    if (nextValue) {
+      playSound("/assets/sfx/4.wav");
+      if (index < inputRefs.current.length - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
     }
   };
 
@@ -38,6 +42,7 @@ export function OtpFlow() {
     index: number,
   ) => {
     if (event.key === "Backspace" && !digits[index] && index > 0) {
+      playSound("/assets/sfx/4.wav");
       inputRefs.current[index - 1]?.focus();
     }
   };
@@ -59,7 +64,8 @@ export function OtpFlow() {
       const data = await res.json();
 
       if (data && data.assignment) {
-        navigate(`/reveal?t=${token}`);
+        sessionStorage.setItem("bm-senior", JSON.stringify(data));
+        navigate(`/reveal?t=${encodeToken(joinedCode, candidate.studentId)}`);
       } else {
         navigate(`/matching?t=${token}`);
       }

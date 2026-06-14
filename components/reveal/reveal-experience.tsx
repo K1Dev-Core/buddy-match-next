@@ -5,10 +5,14 @@ import { PrimaryButton } from "@/components/shared/primary-button";
 import { ChestViewer } from "@/components/reveal/chest-viewer";
 import { GuessModal } from "@/components/reveal/guess-modal";
 import { useChestPose } from "@/components/reveal/use-chest-pose";
-import { decodeCode } from "@/lib/token";
-import { getBuddyFromCode } from "@/lib/match";
-import { ArrowLeft, CheckCircle2, Link as LinkIcon, Sparkles } from "lucide-react";
-import Image from "next/image";
+import { decodeToken } from "@/lib/token";
+import { playSound } from "@/lib/sound";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Link as LinkIcon,
+  Sparkles,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -19,18 +23,24 @@ type RevealExperienceProps = {
 export function RevealExperience({ token }: RevealExperienceProps) {
   const { navigate } = usePageTransition();
   const { pose } = useChestPose();
-  const code = useMemo(() => (token ? decodeCode(token) : null), [token]);
-  const { buddy } = useMemo(() => getBuddyFromCode(code), [code]);
+
+  const decoded = useMemo(() => (token ? decodeToken(token) : null), [token]);
+  const code = decoded?.code ?? null;
+
+  const [isValidating, setIsValidating] = useState(true);
+  const [validationError, setValidationError] = useState("");
+  const [seniorData, setSeniorData] = useState<Record<string, unknown> | null>(
+    null,
+  );
+
   const [revealed, setRevealed] = useState(false);
   const [guess, setGuess] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [attemptsLeft, setAttemptsLeft] = useState(3);
   const [errorMessage, setErrorMessage] = useState("");
-  const [noteStage, setNoteStage] = useState<"closed" | "opening" | "transitioning" | "opened">("closed");
+  const [noteStage, setNoteStage] = useState<
+    "closed" | "opening" | "transitioning" | "opened"
+  >("closed");
   const openTimerRef = useRef<number | null>(null);
-
-  const normalizedGuess = guess.trim().toLowerCase();
-  const noteText = `พี่รหัสของคุณ${buddy.hints[0]} ${buddy.hints[1]} และ${buddy.hints[2]} ลองนึกดูดีๆ ว่าเขาคือใครในสายเลือดโค้ดของคุณ`;
 
   useEffect(() => {
     return () => {
@@ -40,11 +50,63 @@ export function RevealExperience({ token }: RevealExperienceProps) {
     };
   }, []);
 
-  const openHintBox = () => {
-    if (noteStage !== "closed") {
-      return;
-    }
+  useEffect(() => {
+    const validate = async () => {
+      if (!decoded || !decoded.juniorId) {
+        sessionStorage.removeItem("bm-senior");
+        setValidationError("ลิงก์ไม่ถูกต้อง");
+        setIsValidating(false);
+        return;
+      }
 
+      try {
+        const res = await fetch(
+          `/api/match/lookup?juniorId=${encodeURIComponent(decoded.juniorId)}`,
+        );
+        const payload = await res.json();
+
+        if (!res.ok || !payload) {
+          sessionStorage.removeItem("bm-senior");
+          setValidationError("ไม่พบข้อมูลการสุ่มพี่รหัส");
+          setIsValidating(false);
+          return;
+        }
+
+        sessionStorage.setItem("bm-senior", JSON.stringify(payload));
+        setSeniorData(payload);
+        if (sessionStorage.getItem("bm-revealed") === "true") {
+          setRevealed(true);
+        }
+      } catch {
+        sessionStorage.removeItem("bm-senior");
+        setValidationError("ตรวจสอบข้อมูลไม่สำเร็จ");
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validate();
+  }, [decoded]);
+
+  const profile = seniorData?.profile as Record<string, unknown> | null;
+
+  const fullName = (profile?.fullName as string) ?? "";
+  const hints = (profile?.hints as string[]) ?? [];
+  const contact = (profile?.contact as string) ?? "";
+  const greetingText = (profile?.greeting as string) ?? "";
+  const answerName = fullName;
+
+  const strippedName = answerName
+    .replace(/^(นาย|นางสาว|นาง|พี่|คุณ)\s*/i, "")
+    .trim()
+    .toLowerCase();
+  const normalizedGuess = guess.trim().toLowerCase();
+  const noteText =
+    hints.length > 0 ? hints.join(" ") : "พี่รหัสของคุณยังไม่ได้เขียนคำใบ้";
+
+  const openHintBox = () => {
+    if (noteStage !== "closed") return;
+    playSound("/assets/sfx/open.mp3");
     setNoteStage("opening");
     openTimerRef.current = window.setTimeout(() => {
       setNoteStage("transitioning");
@@ -60,25 +122,43 @@ export function RevealExperience({ token }: RevealExperienceProps) {
       return;
     }
 
-    const isCorrect = buddy.answerAliases.some(
-      (alias) => alias.trim().toLowerCase() === normalizedGuess
-    );
+    const isCorrect =
+      answerName.trim().toLowerCase() === normalizedGuess ||
+      strippedName === normalizedGuess;
 
     if (isCorrect) {
+      sessionStorage.setItem("bm-revealed", "true");
       setRevealed(true);
       setErrorMessage("");
       setIsModalOpen(false);
       return;
     }
 
-    const nextAttempts = Math.max(attemptsLeft - 1, 0);
-    setAttemptsLeft(nextAttempts);
-    setErrorMessage(
-      nextAttempts > 0
-        ? `ยังไม่ใช่ ลองอีกครั้งได้อีก ${nextAttempts} ครั้ง`
-        : "หมดโอกาสทายแล้ว ลองกลับไปเริ่มใหม่อีกครั้ง"
-    );
+    setErrorMessage("ยังไม่ใช่ ลองอีกครั้ง");
   };
+
+  if (isValidating) {
+    return (
+      <section className="reveal-shell reveal-shell-centered">
+        <div className="admin-loading">กำลังตรวจสอบข้อมูล...</div>
+      </section>
+    );
+  }
+
+  if (validationError) {
+    return (
+      <section className="reveal-shell reveal-shell-centered">
+        <div className="matching-empty-card">
+          <p className="eyebrow warm">ผิดพลาด</p>
+          <h1>{validationError}</h1>
+          <p className="lead">ต้องเข้าระบบสุ่มพี่รหัสก่อนเข้าหน้านี้</p>
+          <PrimaryButton onClick={() => navigate("/")} fullWidth>
+            กลับหน้าแรก
+          </PrimaryButton>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="reveal-shell reveal-shell-centered">
@@ -94,7 +174,9 @@ export function RevealExperience({ token }: RevealExperienceProps) {
             <div className="headline-stack compact reveal-center-headline">
               <p className="eyebrow warm">Mystery Box</p>
               <h1>กล่องคำใบ้พี่รหัสกำลังรอให้คุณเปิด</h1>
-              <p className="lead">แตะเปิดกล่องก่อน แล้วค่อยอ่านโน้ตคำใบ้ลับของสายเลือดโค้ดนี้</p>
+              <p className="lead">
+                แตะเปิดกล่องก่อน แล้วค่อยอ่านคำใบ้ของสายเลือดโค้ดนี้
+              </p>
             </div>
             <div
               className={`chest-scene ${noteStage === "opening" ? "is-opening" : ""} ${noteStage === "transitioning" ? "is-transitioning" : ""}`}
@@ -118,7 +200,11 @@ export function RevealExperience({ token }: RevealExperienceProps) {
               <span className="chest-pixel chest-pixel-3" />
               <span className="chest-pixel chest-pixel-4" />
             </div>
-            <button className="open-box-button" onClick={openHintBox} disabled={noteStage !== "closed"}>
+            <button
+              className="open-box-button"
+              onClick={openHintBox}
+              disabled={noteStage !== "closed"}
+            >
               {noteStage === "closed"
                 ? "เปิดกล่องคำใบ้"
                 : noteStage === "opening"
@@ -126,22 +212,57 @@ export function RevealExperience({ token }: RevealExperienceProps) {
                   : "กำลังเผยคำใบ้..."}
             </button>
           </div>
+        ) : revealed ? (
+          <div className="reveal-letter-page">
+            <div className="reveal-letter">
+              <div className="reveal-letter-header">
+                <p className="reveal-letter-eyebrow">พี่ของคุณคือ!</p>
+                <h1 className="reveal-letter-name">{fullName}</h1>
+                <div className="reveal-letter-divider" />
+              </div>
+              <div className="reveal-letter-body">
+                <div className="reveal-letter-badge">
+                  <CheckCircle2 size={20} strokeWidth={2.6} />
+                  <span>ข้อความจากพี่รหัสส่งต่อถึงคุณ</span>
+                </div>
+                {greetingText ? (
+                  <p className="reveal-letter-greeting">{greetingText}</p>
+                ) : null}
+                {contact ? (
+                  <div className="reveal-letter-contact">
+                    <span className="reveal-letter-contact-label">
+                      ช่องทางติดต่อ
+                    </span>
+                    <Link
+                      href={
+                        contact.startsWith("http")
+                          ? contact
+                          : `https://${contact}`
+                      }
+                      className="reveal-letter-contact-link"
+                    >
+                      <LinkIcon size={16} strokeWidth={2.4} />
+                      <span>{contact}</span>
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+              <div className="reveal-letter-footer" />
+            </div>
+          </div>
         ) : (
           <div className="reveal-note-stage">
             <div className="headline-stack compact reveal-center-headline">
-              <p className="eyebrow warm">Mystery</p>
+              <p className="eyebrow warm">Secret Note</p>
               <h1>คำใบ้พี่รหัสของคุณ</h1>
-              <p className="lead">ลองทายชื่อว่าใครคือพี่รหัสของคุณก่อนจะกดเปิดเฉลย</p>
+              <p className="lead">ลองทายชื่อพี่รหัสของคุณ</p>
             </div>
-
             <article className="note-card">
-              <div className="hint-sticker note-sticker">Mystery!</div>
+              <div className="hint-sticker note-sticker">คำใบ้</div>
               <div className="note-card-inner">
-                <p className="note-label">Secret Note</p>
                 <p className="note-paragraph">{noteText}</p>
               </div>
             </article>
-
             <div className="note-actions">
               <PrimaryButton
                 onClick={() => {
@@ -150,46 +271,10 @@ export function RevealExperience({ token }: RevealExperienceProps) {
                 }}
                 fullWidth
                 icon={<Sparkles size={18} strokeWidth={2.4} />}
-                disabled={attemptsLeft === 0 || revealed}
               >
-                {revealed ? "เฉลยแล้ว" : "ทายชื่อพี่รหัสเลย"}
+                ทายชื่อพี่รหัสเลย
               </PrimaryButton>
-              <p className="attempts">
-                {revealed ? "คุณทายถูกแล้ว" : `คุณมีโอกาสทายอีก ${attemptsLeft} ครั้ง`}
-              </p>
             </div>
-
-            {revealed ? (
-              <section className="revealed-buddy-card">
-                <div className="revealed-buddy-image-wrap">
-                  <Image
-                    src={buddy.image}
-                    alt={buddy.name}
-                    fill
-                    sizes="(max-width: 1024px) 280px, 360px"
-                  />
-                </div>
-                <div className="revealed-buddy-copy">
-                  <p className="eyebrow">Congratulations</p>
-                  <h2>{buddy.name}</h2>
-                  <p className="profile-meta">
-                    {buddy.major} · {buddy.year}
-                  </p>
-                  <p className="profile-bio">{buddy.bio}</p>
-                  <div className="success-panel">
-                    <div className="success-badge">
-                      <CheckCircle2 size={18} strokeWidth={2.4} />
-                      <span>ยินดีด้วย ทายถูกแล้ว</span>
-                    </div>
-                    <p className="success-message">{buddy.greeting}</p>
-                    <Link href={buddy.contactHref} className="contact-link">
-                      <LinkIcon size={16} strokeWidth={2.4} />
-                      <span>{buddy.contactLabel}</span>
-                    </Link>
-                  </div>
-                </div>
-              </section>
-            ) : null}
           </div>
         )}
       </div>

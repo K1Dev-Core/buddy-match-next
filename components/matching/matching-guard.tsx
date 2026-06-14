@@ -2,8 +2,8 @@
 
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { MatchingExperience } from "@/components/matching/matching-experience";
-import { decodeToken, encodeCode } from "@/lib/token";
-import { useEffect, useState } from "react";
+import { decodeToken } from "@/lib/token";
+import { useEffect, useRef, useState } from "react";
 
 type MatchingGuardProps = {
   token: string | null;
@@ -17,12 +17,16 @@ type MatchingState =
 export function MatchingGuard({ token }: MatchingGuardProps) {
   const { navigate } = usePageTransition();
   const [matchingState, setMatchingState] = useState<MatchingState>({ status: "loading" });
+  const fetchedRef = useRef(false);
 
   const decoded = token ? decodeToken(token) : null;
   const code = decoded?.code ?? null;
   const juniorId = decoded?.juniorId ?? null;
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     if (!juniorId || !code) {
       setMatchingState({
         message: "ยังไม่ได้ยืนยันตัวตนของน้องก่อนเข้าสุ่ม",
@@ -42,13 +46,8 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
         const payload = await response.json();
 
         if (response.ok && payload?.assignment) {
+          sessionStorage.setItem("bm-senior", JSON.stringify(payload));
           setMatchingState({ status: "ready" });
-          return;
-        }
-
-        if (response.ok && payload?.status === "existing" && payload?.assignment) {
-          const ct = encodeCode(code);
-          navigate(`/reveal?t=${ct}`);
           return;
         }
 

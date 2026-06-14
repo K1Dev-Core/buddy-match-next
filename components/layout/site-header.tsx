@@ -4,19 +4,17 @@ import { SeniorAuthModal } from "@/components/auth/senior-auth-modal";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { hasSupabaseBrowserEnv } from "@/lib/supabase/browser";
 import { usePageTransition } from "@/components/layout/use-page-transition";
-import { CircleUserRound, LayoutDashboard, LogOut } from "lucide-react";
+import { CircleUserRound } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function SiteHeader() {
   const { navigate } = usePageTransition();
   const searchParams = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const authError = searchParams.get("auth");
 
@@ -59,7 +57,7 @@ export function SiteHeader() {
     });
 
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email ?? "");
       setUserAvatar(session?.user?.user_metadata?.avatar_url ?? "");
@@ -74,17 +72,6 @@ export function SiteHeader() {
       setIsModalOpen(true);
     }
   }, [errorMessage]);
-
-  useEffect(() => {
-    if (!isDropdownOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isDropdownOpen]);
 
   const loginWithGoogle = async () => {
     if (!hasSupabaseBrowserEnv()) {
@@ -102,66 +89,31 @@ export function SiteHeader() {
         redirectTo,
         queryParams: {
           hd: "msu.ac.th",
-          prompt: "select_account"
-        }
-      }
+          prompt: "select_account",
+        },
+      },
     });
-  };
-
-  const logout = async () => {
-    if (!hasSupabaseBrowserEnv()) {
-      setUserEmail("");
-      setUserAvatar("");
-      setIsDropdownOpen(false);
-      return;
-    }
-
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    window.location.href = "/";
-  };
-
-  const goToDashboard = () => {
-    setIsDropdownOpen(false);
-    navigate("/senior");
   };
 
   return (
     <>
       <header className="site-shell site-header">
         <div className="brand-mark" aria-label="Brand">
-          CodeLineageสายเลือดโค้ด
+          CodeLineage
         </div>
         <div className="header-actions">
           {isSignedIn ? (
-            <div className="user-menu-wrapper" ref={dropdownRef}>
-              <button
-                className="icon-button"
-                aria-label="Profile menu"
-                onClick={() => setIsDropdownOpen((v) => !v)}
-              >
-                {userAvatar ? (
-                  <img src={userAvatar} alt="" className="user-avatar" />
-                ) : (
-                  <CircleUserRound size={22} strokeWidth={2.3} />
-                )}
-              </button>
-              {isDropdownOpen && (
-                <div className="user-dropdown">
-                  <div className="user-dropdown-header">
-                    <p className="user-dropdown-email">{userEmail}</p>
-                  </div>
-                  <button className="user-dropdown-item" onClick={goToDashboard}>
-                    <LayoutDashboard size={18} strokeWidth={2} />
-                    แดชบอร์ดรุ่นพี่
-                  </button>
-                  <button className="user-dropdown-item danger" onClick={logout}>
-                    <LogOut size={18} strokeWidth={2} />
-                    ออกจากระบบ
-                  </button>
-                </div>
+            <button
+              className="icon-button"
+              aria-label="Dashboard"
+              onClick={() => navigate("/senior")}
+            >
+              {userAvatar ? (
+                <img src={userAvatar} alt="" className="user-avatar" />
+              ) : (
+                <CircleUserRound size={22} strokeWidth={2.3} />
               )}
-            </div>
+            </button>
           ) : (
             <button
               className="icon-button"
@@ -186,7 +138,6 @@ export function SiteHeader() {
         isSignedIn={false}
         onClose={() => setIsModalOpen(false)}
         onLogin={loginWithGoogle}
-        onLogout={logout}
         userEmail={userEmail}
       />
     </>

@@ -1,8 +1,10 @@
 "use client";
 
 import { PrimaryButton } from "@/components/shared/primary-button";
+import { useToast } from "@/components/shared/toaster";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
-import { Clock, UserCheck } from "lucide-react";
+import { usePageTransition } from "@/components/layout/use-page-transition";
+import { Clock, Home, LogOut, Shield, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type JuniorAssignment = {
@@ -14,23 +16,47 @@ type JuniorAssignment = {
 const starterHints = [""];
 
 export function SeniorDashboard() {
+  const { navigate } = usePageTransition();
+  const { toast } = useToast();
   const [fullName, setFullName] = useState("");
   const [contact, setContact] = useState("");
+  const [greeting, setGreeting] = useState("");
   const [hints, setHints] = useState(starterHints);
   const [savedAt, setSavedAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [assignments, setAssignments] = useState<JuniorAssignment[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
   const filledHintCount = hints.filter((hint) => hint.trim()).length;
 
   useEffect(() => {
-    const fetchAssignments = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/senior/assignments");
-        const data = await res.json();
-        if (Array.isArray(data.assignments)) {
-          setAssignments(data.assignments);
+        const [profileRes, assignRes] = await Promise.all([
+          fetch("/api/senior/profile"),
+          fetch("/api/senior/assignments"),
+        ]);
+
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (profile?.full_name) {
+            setFullName(profile.full_name);
+            setContact(profile.contact ?? "");
+            setGreeting(profile.greeting ?? "");
+            setHints(profile.hints?.length ? profile.hints : [""]);
+            setIsAdmin(profile.is_admin ?? false);
+            if (profile.updated_at) {
+              setSavedAt(new Date(profile.updated_at).toLocaleString("th-TH"));
+            }
+          }
+        }
+
+        if (assignRes.ok) {
+          const data = await assignRes.json();
+          if (Array.isArray(data.assignments)) {
+            setAssignments(data.assignments);
+          }
         }
       } catch {
         /* ignore */
@@ -38,7 +64,7 @@ export function SeniorDashboard() {
         setIsLoadingAssignments(false);
       }
     };
-    fetchAssignments();
+    fetchData();
   }, []);
 
   const saveProfile = async () => {
@@ -53,21 +79,23 @@ export function SeniorDashboard() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           contact: contact.trim(),
-          hints: hints.filter((hint) => hint.trim())
+          greeting: greeting.trim(),
+          hints: hints.filter((hint) => hint.trim()),
         }),
         headers: { "Content-Type": "application/json" },
-        method: "POST"
+        method: "POST",
       });
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.message ?? "บันทึกไม่สำเร็จ");
+        toast(data.message ?? "บันทึกไม่สำเร็จ", "error");
         return;
       }
 
+      toast("บันทึกสำเร็จ", "success");
       setSavedAt(new Date().toLocaleString("th-TH"));
     } catch {
-      alert("บันทึกไม่สำเร็จ เซิร์ฟเวอร์มีปัญหา");
+      toast("บันทึกไม่สำเร็จ เซิร์ฟเวอร์มีปัญหา", "error");
     } finally {
       setIsSaving(false);
     }
@@ -84,13 +112,12 @@ export function SeniorDashboard() {
         <div className="senior-card">
           <div className="headline-stack compact">
             <p className="eyebrow warm">Senior Dashboard</p>
-            <h1>ตั้งค่าข้อมูลรุ่นพี่ของคุณ</h1>
-            <p className="lead">
-              ใส่ชื่อพี่รหัส คำใบ้ 1 ข้อ และช่องทางติดต่อ เมื่อน้องทายถูก ระบบจะใช้ข้อมูลนี้แสดงทันที
-            </p>
+            <p> </p>
           </div>
 
-          <div className={`senior-status-banner ${assignments.length > 0 ? "matched" : "waiting"}`}>
+          <div
+            className={`senior-status-banner ${assignments.length > 0 ? "matched" : "waiting"}`}
+          >
             {isLoadingAssignments ? (
               <span>กำลังโหลด...</span>
             ) : assignments.length > 0 ? (
@@ -98,7 +125,11 @@ export function SeniorDashboard() {
                 <UserCheck size={22} strokeWidth={2.4} />
                 <div className="senior-status-text">
                   <strong>มีรุ่นน้องแล้ว!</strong>
-                  <span>{juniorName(assignments[0].junior_code4) ?? "น้องรหัส " + assignments[0].junior_code4}</span>
+                  <span>
+                    {juniorName(assignments[0].junior_code4) ??
+                      "น้องรหัส " + assignments[0].junior_code4}
+                    {" (" + assignments[0].junior_id + ")"}
+                  </span>
                 </div>
               </>
             ) : (
@@ -106,12 +137,11 @@ export function SeniorDashboard() {
                 <Clock size={22} strokeWidth={2.4} />
                 <div className="senior-status-text">
                   <strong>กำลังรอน้องมาหา...</strong>
-                  <span>เมื่อน้องกรอกรหัสและยืนยันตัวตน ระบบจะสุ่มให้อัตโนมัติ</span>
                 </div>
               </>
             )}
           </div>
-
+          <h1>ตั้งค่าข้อมูลของคุณ (เพื่อแสดงตอนน้องทายชื่อถูก)</h1>
           <div className="senior-form-grid">
             <label className="senior-field">
               <span>ชื่อพี่รหัส</span>
@@ -119,7 +149,7 @@ export function SeniorDashboard() {
                 className="senior-input"
                 value={fullName}
                 onChange={(event) => setFullName(event.target.value)}
-                placeholder="เช่น พี่โมริ"
+                placeholder=""
               />
             </label>
 
@@ -134,10 +164,19 @@ export function SeniorDashboard() {
             </label>
           </div>
 
+          <div className="senior-field">
+            <span>ข้อความต้อนรับน้อง</span>
+            <textarea
+              className="senior-textarea greeting"
+              value={greeting}
+              onChange={(event) => setGreeting(event.target.value)}
+              placeholder="เช่น ยินดีต้อนรับนะครับ พี่รหัสคนใหม่!"
+            />
+          </div>
+
           <div className="senior-hints-panel">
             <div className="senior-hints-header">
               <h2>คำใบ้สำหรับน้อง</h2>
-              <p>ขั้นต่ำ 1 คำใบ้ ตอนนี้กรอกแล้ว {filledHintCount} คำ</p>
             </div>
             <div className="senior-hint-list">
               {hints.map((hint, index) => (
@@ -154,13 +193,6 @@ export function SeniorDashboard() {
                 />
               ))}
             </div>
-            <button
-              className="ghost-button"
-              onClick={() => setHints((current) => [...current, ""])}
-              type="button"
-            >
-              เพิ่มคำใบ้อีกข้อ
-            </button>
           </div>
 
           <div className="senior-actions">
@@ -170,8 +202,36 @@ export function SeniorDashboard() {
             >
               {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูลรุ่นพี่"}
             </PrimaryButton>
-            {savedAt ? <p className="senior-saved-note">บันทึกล่าสุด {savedAt}</p> : null}
+            {savedAt ? (
+              <p className="senior-saved-note">บันทึกล่าสุด {savedAt}</p>
+            ) : null}
           </div>
+        </div>
+
+        <div className="senior-footer-actions">
+          <button className="ghost-button" onClick={() => navigate("/")}>
+            <Home size={18} strokeWidth={2} />
+            กลับหน้าแรก
+          </button>
+          {isAdmin ? (
+            <button className="ghost-button" onClick={() => navigate("/admin")}>
+              <Shield size={18} strokeWidth={2} />
+              เข้าสู่หน้าแอดมิน
+            </button>
+          ) : null}
+          <button
+            className="ghost-button danger"
+            onClick={async () => {
+              const { getSupabaseBrowserClient } =
+                await import("@/lib/supabase/browser");
+              const supabase = getSupabaseBrowserClient();
+              await supabase.auth.signOut();
+              window.location.href = "/";
+            }}
+          >
+            <LogOut size={18} strokeWidth={2} />
+            ออกจากระบบ
+          </button>
         </div>
       </section>
     </main>
