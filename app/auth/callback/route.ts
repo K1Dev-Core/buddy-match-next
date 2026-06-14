@@ -56,10 +56,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (isAdmin) {
-    await supabase
-      .from("seniors")
-      .update({ is_admin: true })
-      .eq("id", seniorId);
+    await supabase.rpc("set_senior_admin", { p_id: seniorId, p_admin: true });
   }
 
   return NextResponse.redirect(new URL(nextPath, origin));

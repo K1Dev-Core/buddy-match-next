@@ -218,7 +218,7 @@ begin
   ) into v_result
   from public.seniors s
   left join (select senior_id, count(*) as c from public.assignments group by senior_id) a on a.senior_id = s.id
-  left join public.assignments a2 on a2.senior_id = s.id;
+  left join lateral (select junior_id, junior_code4, assigned_at from public.assignments where senior_id = s.id limit 1) a2 on true;
 
   return coalesce(v_result, '[]'::json);
 end;
@@ -311,18 +311,36 @@ end;
 $$;
 
 -- ============================================
--- 10. DISABLE RLS (ใช้ security definer RPC แทน)
+-- 10. RPC: set_senior_admin
+-- ใช้ใน auth callback สำหรับกำหนด is_admin
+-- ============================================
+create or replace function public.set_senior_admin(
+  p_id text,
+  p_admin boolean
+) returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update public.seniors set is_admin = p_admin where id = p_id;
+  return json_build_object('status', 'ok');
+end;
+$$;
+
+-- ============================================
+-- 11. DISABLE RLS (ใช้ security definer RPC แทน)
 -- ============================================
 alter table public.seniors disable row level security;
 alter table public.assignments disable row level security;
 
 -- ============================================
--- 11. GRANT PERMISSIONS
--- ให้ anon key เรียก RPC และอ่าน/เขียน table ได้
+-- 12. GRANT PERMISSIONS
+-- ให้ anon key เรียก RPC เท่านั้น (อ่าน table โดยตรงผ่าน JS client ไม่ได้)
 -- ============================================
 grant usage on schema public to anon;
-grant all on public.seniors to anon;
-grant all on public.assignments to anon;
+grant select on public.seniors to anon;
+grant select on public.assignments to anon;
 grant execute on function public.assign_senior_to_junior(text, text) to anon;
 grant execute on function public.lookup_junior_assignment(text) to anon;
 grant execute on function public.get_senior_count() to anon;
@@ -330,5 +348,6 @@ grant execute on function public.upsert_senior_profile(text, text, text, text[],
 grant execute on function public.get_all_seniors() to anon;
 grant execute on function public.get_admin_stats() to anon;
 grant execute on function public.clear_assignment(text) to anon;
+grant execute on function public.set_senior_admin(text, boolean) to anon;
 grant execute on function public.get_matching_open() to anon;
 grant execute on function public.set_matching_open(boolean) to anon;
