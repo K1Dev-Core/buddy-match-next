@@ -28,20 +28,13 @@ const fallbackBuddy = {
 
 export function sanitizeCode(input: string | null) {
   const cleaned = (input ?? "").replace(/\D/g, "").slice(0, 4);
-  return cleaned.length === 4 ? cleaned : "2408";
+  return cleaned.length === 4 ? cleaned : null;
 }
 
 export function getBuddyFromCode(input: string | null) {
   const code = sanitizeCode(input);
-  if (buddies.length === 0) {
-    return { code, buddy: fallbackBuddy };
-  }
-  const index = code
-    .split("")
-    .map(Number)
-    .reduce((sum, digit) => sum + digit, 0) % buddies.length;
   return {
-    code,
-    buddy: buddies[index]
+    code: code ?? "",
+    buddy: fallbackBuddy
   };
 }

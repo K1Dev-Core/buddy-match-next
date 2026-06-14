@@ -15,8 +15,7 @@ export function OtpFlow() {
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [matchingOpen, setMatchingOpen] = useState(true);
-  const [statusLoaded, setStatusLoaded] = useState(false);
+  const [matchingOpen, setMatchingOpen] = useState<boolean | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const joinedCode = useMemo(() => digits.join(""), [digits]);
@@ -25,8 +24,8 @@ export function OtpFlow() {
   useEffect(() => {
     fetch("/api/match/status")
       .then((r) => r.json())
-      .then((d) => { setMatchingOpen(d.open); setStatusLoaded(true); })
-      .catch(() => { setMatchingOpen(true); setStatusLoaded(true); });
+      .then((d) => setMatchingOpen(d.open !== false))
+      .catch(() => setMatchingOpen(true));
   }, []);
   const candidate = useMemo(
     () => juniorRecordsByCode4.get(joinedCode) ?? null,
@@ -109,11 +108,11 @@ export function OtpFlow() {
         <div className="action-stack">
           <PrimaryButton
             onClick={() => submit(joinedCode)}
-            disabled={!isReady || isLoading || (statusLoaded && !matchingOpen)}
+            disabled={!isReady || isLoading || matchingOpen === false}
             fullWidth
             icon={<Search size={18} strokeWidth={2.4} />}
           >
-            {isLoading ? "กำลังตรวจสอบ..." : !statusLoaded ? "กำลังโหลด..." : !matchingOpen ? "ระบบปิดอยู่" : "ค้นหา"}
+            {isLoading ? "กำลังตรวจสอบ..." : matchingOpen === null ? "กำลังโหลด..." : matchingOpen ? "ค้นหา" : "ระบบปิดอยู่"}
           </PrimaryButton>
         </div>
         <SeniorCountBadge />

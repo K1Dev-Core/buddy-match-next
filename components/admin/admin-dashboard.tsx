@@ -41,8 +41,8 @@ export function AdminDashboard() {
   const [matchingOpen, setMatchingOpen] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
 
-  const fetchData = async () => {
-    setIsLoading(true);
+  const loadData = async (showSpinner = false) => {
+    if (showSpinner) setIsLoading(true);
     try {
       const [seniorsRes, statsRes, statusRes] = await Promise.all([
         fetch("/api/admin/seniors"),
@@ -67,12 +67,12 @@ export function AdminDashboard() {
     } catch {
       toast("โหลดข้อมูลไม่สำเร็จ", "error");
     } finally {
-      setIsLoading(false);
+      if (showSpinner) setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    loadData(true);
   }, []);
 
   const clearAssignment = async (seniorId: string) => {
@@ -90,7 +90,7 @@ export function AdminDashboard() {
       }
 
       toast("ลบการมอบหมายสำเร็จ", "success");
-      fetchData();
+      loadData(false);
       if (selectedSenior?.id === seniorId) {
         setSelectedSenior(null);
       }

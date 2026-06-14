@@ -14,6 +14,7 @@ export function ChestPreloader() {
   useEffect(() => {
     ensureModelViewerLoaded();
 
+    const links: HTMLLinkElement[] = [];
     assetUrls.forEach((url) => {
       const link = document.createElement("link");
       link.rel = "preload";
@@ -23,7 +24,12 @@ export function ChestPreloader() {
         link.crossOrigin = "anonymous";
       }
       document.head.appendChild(link);
+      links.push(link);
     });
+
+    return () => {
+      links.forEach((link) => link.remove());
+    };
   }, []);
 
   return null;

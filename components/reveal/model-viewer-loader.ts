@@ -29,7 +29,7 @@ export function ensureModelViewerLoaded() {
 
       const script = document.createElement("script");
       script.type = "module";
-      script.src = "https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js";
+      script.src = "https://unpkg.com/@google/model-viewer@4.3.1/dist/model-viewer.min.js";
       script.dataset.modelViewerLoader = "true";
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Failed to load model-viewer"));

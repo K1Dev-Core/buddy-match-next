@@ -14,16 +14,16 @@ describe("sanitizeCode", () => {
     expect(sanitizeCode("2055123")).toBe("2055");
   });
 
-  it("returns default for null", () => {
-    expect(sanitizeCode(null)).toBe("2408");
+  it("returns null for null", () => {
+    expect(sanitizeCode(null)).toBeNull();
   });
 
-  it("returns default for empty string", () => {
-    expect(sanitizeCode("")).toBe("2408");
+  it("returns null for empty string", () => {
+    expect(sanitizeCode("")).toBeNull();
   });
 
-  it("returns default for too short input", () => {
-    expect(sanitizeCode("123")).toBe("2408");
+  it("returns null for too short input", () => {
+    expect(sanitizeCode("123")).toBeNull();
   });
 
   it("handles partially numeric input", () => {
