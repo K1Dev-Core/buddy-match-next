@@ -8,7 +8,7 @@ const ADMIN_IDS = new Set([
   "68011212008",
   "68011212212",
   "68011212050",
-  "68011212116",
+  "68011212243",
 ]);
 
 export async function GET(request: NextRequest) {
