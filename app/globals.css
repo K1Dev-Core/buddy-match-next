@@ -2520,24 +2520,6 @@ button {
   }
 }
 
-/* --- System closed banner (otp-flow) --- */
-.system-closed-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #fff3e0;
-  border-radius: 14px;
-  padding: 12px 16px;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #7b5a00;
-}
-
-.system-closed-banner svg {
-  flex-shrink: 0;
-  color: #d4a017;
-}
-
 /* --- Admin toggle --- */
 .admin-status-toggle {
   display: flex;

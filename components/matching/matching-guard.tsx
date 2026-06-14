@@ -41,7 +41,7 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
         const statusData = await statusRes.json();
         if (!statusData.open) {
           setMatchingState({
-            message: "ระบบปิดการสุ่มพี่รหัสอยู่ กรุณารอจนกว่าผู้ดูแลจะเปิดระบบอีกครั้ง",
+            message: "ระบบปิดการสุ่มพี่รหัส",
             status: "error"
           });
           return;

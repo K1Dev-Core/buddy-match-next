@@ -7,7 +7,7 @@ import { SeniorCountBadge } from "@/components/home/senior-count-badge";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { encodeToken } from "@/lib/token";
 import { playSound } from "@/lib/sound";
-import { Search, Lock } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export function OtpFlow() {
@@ -107,12 +107,6 @@ export function OtpFlow() {
           ))}
         </div>
         <div className="action-stack">
-          {statusLoaded && !matchingOpen ? (
-            <div className="system-closed-banner">
-              <Lock size={20} strokeWidth={2.2} />
-              <span>ตอนนี้ระบบปิดการสุ่มพี่รหัสอยู่ กรุณารอจนกว่าผู้ดูแลจะเปิดระบบอีกครั้ง</span>
-            </div>
-          ) : null}
           <PrimaryButton
             onClick={() => submit(joinedCode)}
             disabled={!isReady || isLoading || (statusLoaded && !matchingOpen)}
