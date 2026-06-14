@@ -37,16 +37,12 @@ export async function POST(request: NextRequest) {
 
     const seniorId = email.replace("@msu.ac.th", "");
 
-    const { error } = await supabase.from("seniors").upsert(
-      {
-        id: seniorId,
-        full_name: fullName,
-        contact,
-        hints,
-        updated_at: new Date().toISOString()
-      },
-      { onConflict: "id" }
-    );
+    const { error } = await supabase.rpc("upsert_senior_profile", {
+      p_id: seniorId,
+      p_full_name: fullName,
+      p_contact: contact,
+      p_hints: hints
+    });
 
     if (error) {
       return NextResponse.json(

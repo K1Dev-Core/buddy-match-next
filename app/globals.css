@@ -1397,6 +1397,42 @@ button {
   font-weight: 700;
 }
 
+.senior-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-radius: var(--radius-md);
+  margin-bottom: 28px;
+}
+
+.senior-status-banner.matched {
+  background: linear-gradient(135deg, rgba(69, 103, 49, 0.1), rgba(69, 103, 49, 0.04));
+  border: 1px solid rgba(69, 103, 49, 0.15);
+}
+
+.senior-status-banner.waiting {
+  background: linear-gradient(135deg, rgba(253, 173, 91, 0.12), rgba(253, 173, 91, 0.04));
+  border: 1px solid rgba(253, 173, 91, 0.18);
+}
+
+.senior-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.senior-status-text strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.senior-status-text span {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
 .auth-modal-actions {
   display: flex;
   flex-direction: column;

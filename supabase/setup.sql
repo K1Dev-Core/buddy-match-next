@@ -216,7 +216,42 @@ end;
 $$;
 
 -- ============================================
--- 5. GRANT PERMISSIONS
+-- 5. RPC: upsert_senior_profile
+-- ใช้ตอนรุ่นพี่บันทึกข้อมูลจาก Senior Dashboard
+-- security definer = bypass RLS
+-- ============================================
+create or replace function public.upsert_senior_profile(
+  p_id text,
+  p_full_name text,
+  p_contact text,
+  p_hints text[]
+) returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.seniors (id, full_name, contact, hints, updated_at)
+  values (p_id, p_full_name, p_contact, p_hints, now())
+  on conflict (id)
+  do update set
+    full_name = excluded.full_name,
+    contact = excluded.contact,
+    hints = excluded.hints,
+    updated_at = now();
+
+  return json_build_object('status', 'ok');
+end;
+$$;
+
+-- ============================================
+-- 6. DISABLE RLS (ใช้ security definer RPC แทน)
+-- ============================================
+alter table public.seniors disable row level security;
+alter table public.assignments disable row level security;
+
+-- ============================================
+-- 7. GRANT PERMISSIONS
 -- ให้ anon key เรียก RPC และอ่าน/เขียน table ได้
 -- ============================================
 grant usage on schema public to anon;
@@ -225,3 +260,4 @@ grant all on public.assignments to anon;
 grant execute on function public.assign_senior_to_junior(text, text) to anon;
 grant execute on function public.lookup_junior_assignment(text) to anon;
 grant execute on function public.get_senior_count() to anon;
+grant execute on function public.upsert_senior_profile(text, text, text, text[]) to anon;

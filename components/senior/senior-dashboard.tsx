@@ -2,7 +2,7 @@
 
 import { PrimaryButton } from "@/components/shared/primary-button";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
-import { Clock, UserCheck, UserRound } from "lucide-react";
+import { Clock, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
 type JuniorAssignment = {
@@ -90,6 +90,28 @@ export function SeniorDashboard() {
             </p>
           </div>
 
+          <div className={`senior-status-banner ${assignments.length > 0 ? "matched" : "waiting"}`}>
+            {isLoadingAssignments ? (
+              <span>กำลังโหลด...</span>
+            ) : assignments.length > 0 ? (
+              <>
+                <UserCheck size={22} strokeWidth={2.4} />
+                <div className="senior-status-text">
+                  <strong>มีรุ่นน้องแล้ว!</strong>
+                  <span>{juniorName(assignments[0].junior_code4) ?? "น้องรหัส " + assignments[0].junior_code4}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <Clock size={22} strokeWidth={2.4} />
+                <div className="senior-status-text">
+                  <strong>กำลังรอน้องมาหา...</strong>
+                  <span>เมื่อน้องกรอกรหัสและยืนยันตัวตน ระบบจะสุ่มให้อัตโนมัติ</span>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="senior-form-grid">
             <label className="senior-field">
               <span>ชื่อพี่รหัส</span>
@@ -149,38 +171,6 @@ export function SeniorDashboard() {
               {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูลรุ่นพี่"}
             </PrimaryButton>
             {savedAt ? <p className="senior-saved-note">บันทึกล่าสุด {savedAt}</p> : null}
-          </div>
-        </div>
-
-        <div className="senior-card">
-          <div className="headline-stack compact">
-            <p className="eyebrow warm">Junior List</p>
-            <h1>รายชื่อรุ่นน้อง</h1>
-          </div>
-          <div className="junior-list-section">
-            {isLoadingAssignments ? (
-              <p className="senior-saved-note">กำลังโหลด...</p>
-            ) : assignments.length > 0 ? (
-              <div className="junior-list">
-                {assignments.map((a) => (
-                  <div key={a.junior_id} className="junior-list-item">
-                    <UserCheck size={18} strokeWidth={2} />
-                    <span>
-                      {juniorName(a.junior_code4) ?? "น้องรหัส " + a.junior_code4}
-                    </span>
-                    <span className="junior-list-date">
-                      {new Date(a.assigned_at).toLocaleDateString("th-TH")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="senior-waiting">
-                <Clock size={32} strokeWidth={1.5} />
-                <p>กำลังรอน้องมาหา...</p>
-                <span>เมื่อมีน้องกรอกรหัสและยืนยันตัวตนแล้ว ระบบจะสุ่มให้อัตโนมัติ</span>
-              </div>
-            )}
           </div>
         </div>
       </section>
