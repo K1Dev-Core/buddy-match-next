@@ -5,7 +5,7 @@ import { usePageTransition } from "@/components/layout/use-page-transition";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
 import { useToast } from "@/components/shared/toaster";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Home, Lock, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users } from "lucide-react";
+import { ArrowLeft, Download, Home, Lock, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users } from "lucide-react";
 
 type SeniorInfo = {
   id: string;
@@ -168,6 +168,15 @@ export function AdminDashboard() {
   const assignedCount = seniors.filter((s) => s.juniorId).length;
   const unassignedCount = seniors.filter((s) => !s.juniorId).length;
 
+  const exportCsv = () => {
+    const a = document.createElement("a");
+    a.href = "/api/admin/export";
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <main className="admin-page-shell">
       <section className="site-shell admin-content">
@@ -242,6 +251,10 @@ export function AdminDashboard() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
+              <button className="ghost-button small" onClick={exportCsv}>
+                <Download size={16} strokeWidth={2} />
+                Export CSV
+              </button>
               <div className="admin-filter-tabs">
                 <button
                   className={`admin-filter-tab ${filterStatus === "all" ? "active" : ""}`}
