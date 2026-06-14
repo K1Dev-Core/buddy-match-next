@@ -2,6 +2,13 @@ import { isAllowedSeniorEmail } from "@/lib/auth/senior-allowlist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
+const ADMIN_IDS = new Set([
+  "67011212055",
+  "68011212010",
+  "68011212008",
+  "68011212212",
+]);
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -34,6 +41,24 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL("/?auth=unauthorized", origin)
     );
+  }
+
+  const seniorId = email.replace("@msu.ac.th", "");
+  const isAdmin = ADMIN_IDS.has(seniorId);
+
+  await supabase.rpc("upsert_senior_profile", {
+    p_id: seniorId,
+    p_full_name: user?.user_metadata?.full_name ?? seniorId,
+    p_contact: "",
+    p_hints: [],
+    p_greeting: ""
+  });
+
+  if (isAdmin) {
+    await supabase
+      .from("seniors")
+      .update({ is_admin: true })
+      .eq("id", seniorId);
   }
 
   return NextResponse.redirect(new URL(nextPath, origin));
