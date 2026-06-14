@@ -3,7 +3,7 @@ import { RevealExperience } from "@/components/reveal/reveal-experience";
 
 type RevealPageProps = {
   searchParams: Promise<{
-    code?: string;
+    t?: string;
   }>;
 };
 
@@ -13,7 +13,7 @@ export default async function RevealPage({ searchParams }: RevealPageProps) {
   return (
     <main className="page-shell centered-shell">
       <DecorLayer mode="reveal" />
-      <RevealExperience code={params.code ?? null} />
+      <RevealExperience token={params.t ?? null} />
     </main>
   );
 }

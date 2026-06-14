@@ -5,6 +5,7 @@ import { PrimaryButton } from "@/components/shared/primary-button";
 import { ChestViewer } from "@/components/reveal/chest-viewer";
 import { GuessModal } from "@/components/reveal/guess-modal";
 import { useChestPose } from "@/components/reveal/use-chest-pose";
+import { decodeCode } from "@/lib/token";
 import { getBuddyFromCode } from "@/lib/match";
 import { ArrowLeft, CheckCircle2, Link as LinkIcon, Sparkles } from "lucide-react";
 import Image from "next/image";
@@ -12,12 +13,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type RevealExperienceProps = {
-  code: string | null;
+  token: string | null;
 };
 
-export function RevealExperience({ code }: RevealExperienceProps) {
+export function RevealExperience({ token }: RevealExperienceProps) {
   const { navigate } = usePageTransition();
   const { pose } = useChestPose();
+  const code = useMemo(() => (token ? decodeCode(token) : null), [token]);
   const { buddy } = useMemo(() => getBuddyFromCode(code), [code]);
   const [revealed, setRevealed] = useState(false);
   const [guess, setGuess] = useState("");

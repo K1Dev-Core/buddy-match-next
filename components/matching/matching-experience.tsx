@@ -1,19 +1,18 @@
 "use client";
 
 import { usePageTransition } from "@/components/layout/use-page-transition";
-import { ChestViewer } from "@/components/reveal/chest-viewer";
-import { useChestPose } from "@/components/reveal/use-chest-pose";
+import { encodeCode } from "@/lib/token";
 import { getBuddyFromCode } from "@/lib/match";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 type MatchingExperienceProps = {
   code: string | null;
+  juniorId: string | null;
 };
 
-export function MatchingExperience({ code }: MatchingExperienceProps) {
+export function MatchingExperience({ code, juniorId }: MatchingExperienceProps) {
   const { navigate } = usePageTransition();
-  const { pose } = useChestPose();
   const { buddy, code: safeCode } = useMemo(() => getBuddyFromCode(code), [code]);
   const [progress, setProgress] = useState(0);
   const hasNavigatedRef = useRef(false);
@@ -61,11 +60,12 @@ export function MatchingExperience({ code }: MatchingExperienceProps) {
     hasNavigatedRef.current = true;
 
     const timer = window.setTimeout(() => {
-      navigate(`/reveal?code=${safeCode}`);
+      const ct = encodeCode(safeCode);
+      navigate(`/reveal?t=${ct}`);
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [navigate, progress, safeCode]);
+  }, [juniorId, navigate, progress, safeCode]);
 
   return (
     <section className="matching-shell">
@@ -120,7 +120,7 @@ export function MatchingExperience({ code }: MatchingExperienceProps) {
             </svg>
 
             <div className="matching-core-image-shell">
-              <ChestViewer className="matching-chest-viewer" pose={pose} state="idle" />
+              <span className="matching-question-mark">?</span>
             </div>
 
             <div

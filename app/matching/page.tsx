@@ -1,9 +1,9 @@
 import { DecorLayer } from "@/components/layout/decor-layer";
-import { MatchingExperience } from "@/components/matching/matching-experience";
+import { MatchingGuard } from "@/components/matching/matching-guard";
 
 type MatchingPageProps = {
   searchParams: Promise<{
-    code?: string;
+    t?: string;
   }>;
 };
 
@@ -13,7 +13,7 @@ export default async function MatchingPage({ searchParams }: MatchingPageProps) 
   return (
     <main className="page-shell centered-shell">
       <DecorLayer mode="matching" />
-      <MatchingExperience code={params.code ?? null} />
+      <MatchingGuard token={params.t ?? null} />
     </main>
   );
 }

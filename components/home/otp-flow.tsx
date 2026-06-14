@@ -1,19 +1,27 @@
 "use client";
 
+import { juniorRecordsByCode4 } from "@/data/auth/juniors";
+import { JuniorConfirmModal } from "@/components/home/junior-confirm-modal";
 import { PrimaryButton } from "@/components/shared/primary-button";
+import { SeniorCountBadge } from "@/components/home/senior-count-badge";
 import { usePageTransition } from "@/components/layout/use-page-transition";
+import { encodeToken } from "@/lib/token";
 import { Search } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-
-const demoCode = "2408";
 
 export function OtpFlow() {
   const { navigate } = usePageTransition();
   const [digits, setDigits] = useState(["", "", "", ""]);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   const joinedCode = useMemo(() => digits.join(""), [digits]);
   const isReady = joinedCode.length === 4;
+  const candidate = useMemo(
+    () => juniorRecordsByCode4.get(joinedCode) ?? null,
+    [joinedCode],
+  );
 
   const updateDigit = (index: number, value: string) => {
     const nextValue = value.replace(/\D/g, "").slice(-1);
@@ -27,7 +35,7 @@ export function OtpFlow() {
 
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>,
-    index: number
+    index: number,
   ) => {
     if (event.key === "Backspace" && !digits[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
@@ -35,48 +43,73 @@ export function OtpFlow() {
   };
 
   const submit = (code: string) => {
-    navigate(`/matching?code=${code}`);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmIdentity = async () => {
+    if (!candidate) return;
+    setIsLoading(true);
+
+    const token = encodeToken(joinedCode, candidate.studentId);
+
+    try {
+      const res = await fetch(
+        `/api/match/lookup?juniorId=${encodeURIComponent(candidate.studentId)}`,
+      );
+      const data = await res.json();
+
+      if (data && data.assignment) {
+        navigate(`/reveal?t=${token}`);
+      } else {
+        navigate(`/matching?t=${token}`);
+      }
+    } catch {
+      navigate(`/matching?t=${token}`);
+    }
   };
 
   return (
-    <div className="entry-panel">
-      <div className="headline-stack">
-        <p className="eyebrow">Buddy Finder</p>
-        <h1>กรอกรหัสสี่ตัวท้ายเพื่อหาพี่รหัส</h1>
-        <p className="lead">
-          เชื่อมต่อกับรุ่นพี่ในคณะของคุณ เพื่อเริ่มต้นการผจญภัยในรั้วมหาวิทยาลัยไปด้วยกัน
-        </p>
+    <>
+      <div className="entry-panel">
+        <div className="headline-stack">
+          <h1>กรอกรหัสสี่ตัวท้ายเพื่อหาพี่รหัส</h1>
+        </div>
+        <div className="otp-row">
+          {digits.map((digit, index) => (
+            <input
+              key={index}
+              ref={(node) => {
+                inputRefs.current[index] = node;
+              }}
+              className="otp-input"
+              value={digit}
+              onChange={(event) => updateDigit(index, event.target.value)}
+              onKeyDown={(event) => handleKeyDown(event, index)}
+              inputMode="numeric"
+              maxLength={1}
+              aria-label={`Digit ${index + 1}`}
+            />
+          ))}
+        </div>
+        <div className="action-stack">
+          <PrimaryButton
+            onClick={() => submit(joinedCode)}
+            disabled={!isReady || isLoading}
+            fullWidth
+            icon={<Search size={18} strokeWidth={2.4} />}
+          >
+            {isLoading ? "กำลังตรวจสอบ..." : "ค้นหา"}
+          </PrimaryButton>
+        </div>
+        <SeniorCountBadge />
       </div>
-      <div className="otp-row">
-        {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(node) => {
-              inputRefs.current[index] = node;
-            }}
-            className="otp-input"
-            value={digit}
-            onChange={(event) => updateDigit(index, event.target.value)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
-            inputMode="numeric"
-            maxLength={1}
-            aria-label={`Digit ${index + 1}`}
-          />
-        ))}
-      </div>
-      <div className="action-stack">
-        <PrimaryButton
-          onClick={() => submit(joinedCode)}
-          disabled={!isReady}
-          fullWidth
-          icon={<Search size={18} strokeWidth={2.4} />}
-        >
-          Confirm
-        </PrimaryButton>
-        <button className="text-button" onClick={() => submit(demoCode)}>
-          ลองเดโมด้วยรหัส {demoCode}
-        </button>
-      </div>
-    </div>
+      <JuniorConfirmModal
+        candidate={candidate}
+        code4={joinedCode}
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmIdentity}
+      />
+    </>
   );
 }
