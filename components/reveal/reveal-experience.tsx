@@ -54,6 +54,7 @@ export function RevealExperience({ token }: RevealExperienceProps) {
     const validate = async () => {
       if (!decoded || !decoded.juniorId) {
         sessionStorage.removeItem("bm-senior");
+        sessionStorage.removeItem("bm-revealed");
         setValidationError("ลิงก์ไม่ถูกต้อง");
         setIsValidating(false);
         return;
@@ -67,14 +68,24 @@ export function RevealExperience({ token }: RevealExperienceProps) {
 
         if (!res.ok || !payload) {
           sessionStorage.removeItem("bm-senior");
+          sessionStorage.removeItem("bm-revealed");
           setValidationError("ไม่พบข้อมูลการสุ่มพี่รหัส");
           setIsValidating(false);
           return;
         }
 
+        const oldRaw = sessionStorage.getItem("bm-senior");
+        const oldSeniorId = oldRaw
+          ? (JSON.parse(oldRaw)?.profile?.seniorId as string | undefined)
+          : undefined;
+        const newSeniorId = payload?.profile?.seniorId as string | undefined;
+
         sessionStorage.setItem("bm-senior", JSON.stringify(payload));
         setSeniorData(payload);
-        if (sessionStorage.getItem("bm-revealed") === "true") {
+
+        if (oldSeniorId && newSeniorId && oldSeniorId !== newSeniorId) {
+          sessionStorage.removeItem("bm-revealed");
+        } else if (sessionStorage.getItem("bm-revealed") === "true") {
           setRevealed(true);
         }
       } catch {
