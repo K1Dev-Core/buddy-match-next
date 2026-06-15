@@ -18,10 +18,22 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
   const { navigate } = usePageTransition();
   const [matchingState, setMatchingState] = useState<MatchingState>({ status: "loading" });
   const fetchedRef = useRef(false);
+  const isMountedRef = useRef(true);
 
   const decoded = token ? decodeToken(token) : null;
   const code = decoded?.code ?? null;
   const juniorId = decoded?.juniorId ?? null;
+
+  useEffect(() => {
+    if (matchingState.status !== "loading") return;
+    const id = setTimeout(() => {
+      setMatchingState({
+        message: "การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง",
+        status: "error"
+      });
+    }, 15000);
+    return () => clearTimeout(id);
+  }, [matchingState.status]);
 
   useEffect(() => {
     if (fetchedRef.current) return;
@@ -35,9 +47,12 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
       return;
     }
 
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 10000);
+
     const run = async () => {
       try {
-        const statusRes = await fetch("/api/match/status");
+        const statusRes = await fetch("/api/match/status", { signal: abort.signal });
         const statusData = await statusRes.json();
         if (!statusData.open) {
           setMatchingState({
@@ -50,7 +65,8 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
         const response = await fetch("/api/match/assign", {
           body: JSON.stringify({ juniorCode4: code, juniorId }),
           headers: { "Content-Type": "application/json" },
-          method: "POST"
+          method: "POST",
+          signal: abort.signal
         });
 
         const payload = await response.json();
@@ -73,15 +89,31 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
               ? payload.status
               : "error"
         });
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          if (isMountedRef.current) {
+            setMatchingState({
+              message: "การเชื่อมต่อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง",
+              status: "error"
+            });
+          }
+          return;
+        }
         setMatchingState({
           message: "ระบบสุ่มพี่รหัสมีปัญหา ลองใหม่อีกครั้ง",
           status: "error"
         });
+      } finally {
+        clearTimeout(timer);
       }
     };
 
     run();
+    return () => {
+      isMountedRef.current = false;
+      abort.abort();
+      clearTimeout(timer);
+    };
   }, [code, juniorId, navigate]);
 
   if (matchingState.status === "loading") {

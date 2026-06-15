@@ -32,7 +32,6 @@ export function AdminDashboard() {
   const { navigate } = usePageTransition();
   const { toast } = useToast();
   const [seniors, setSeniors] = useState<SeniorInfo[]>([]);
-  const [stats, setStats] = useState<AdminStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSenior, setSelectedSenior] = useState<SeniorInfo | null>(null);
   const [clearingId, setClearingId] = useState<string | null>(null);
@@ -43,11 +42,20 @@ export function AdminDashboard() {
 
   const loadData = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
+    const cache = sessionStorage.getItem("bm-admin-cache");
+    const cacheData = cache ? JSON.parse(cache) : null;
+    if (cacheData && !showSpinner) {
+      setSeniors(cacheData.seniors);
+      setMatchingOpen(cacheData.matchingOpen);
+      return;
+    }
+
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 10000);
     try {
-      const [seniorsRes, statsRes, statusRes] = await Promise.all([
-        fetch("/api/admin/seniors"),
-        fetch("/api/admin/stats"),
-        fetch("/api/admin/matching-status"),
+      const [seniorsRes, statusRes] = await Promise.all([
+        fetch("/api/admin/seniors", { signal: abort.signal }),
+        fetch("/api/admin/matching-status", { signal: abort.signal }),
       ]);
 
       if (statusRes.ok) {
@@ -56,17 +64,15 @@ export function AdminDashboard() {
       }
 
       if (seniorsRes.ok) {
-        const data = await seniorsRes.json();
-        setSeniors(Array.isArray(data) ? data : []);
-      }
-
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data);
+        const raw = await seniorsRes.json();
+        const data = Array.isArray(raw) ? raw : [];
+        setSeniors(data);
+        sessionStorage.setItem("bm-admin-cache", JSON.stringify({ seniors: data, matchingOpen: true }));
       }
     } catch {
-      toast("โหลดข้อมูลไม่สำเร็จ", "error");
+      if (!cacheData) toast("โหลดข้อมูลไม่สำเร็จ", "error");
     } finally {
+      clearTimeout(timer);
       if (showSpinner) setIsLoading(false);
     }
   };
@@ -198,7 +204,7 @@ export function AdminDashboard() {
               <div className="admin-stat-card">
                 <Users size={24} strokeWidth={2.2} />
                 <div>
-                  <span className="admin-stat-value">{stats?.totalSeniors ?? seniors.length}</span>
+                  <span className="admin-stat-value">{seniors.length}</span>
                   <span className="admin-stat-label">พี่รหัสทั้งหมด</span>
                 </div>
               </div>
