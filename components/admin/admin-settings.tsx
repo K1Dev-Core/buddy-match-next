@@ -162,7 +162,7 @@ export function AdminSettings() {
           </div>
         </div>
 
-        <details className="admin-allowlist-section" open>
+        <details className="admin-allowlist-section">
           <summary className="admin-allowlist-summary">
             <Users size={16} strokeWidth={2.2} />
             จัดการรายชื่อรุ่นพี่ที่อนุญาต ({allowlist.length} คน)
@@ -200,7 +200,7 @@ export function AdminSettings() {
           </div>
         </details>
 
-        <details className="admin-allowlist-section" open>
+        <details className="admin-allowlist-section">
           <summary className="admin-allowlist-summary">
             <Users size={16} strokeWidth={2.2} />
             จัดการข้อมูลรุ่นน้อง ({juniors.length} คน)
