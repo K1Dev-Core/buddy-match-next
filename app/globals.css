@@ -43,12 +43,12 @@ body {
   position: relative;
   min-height: 100vh;
   z-index: 1;
-  animation: page-enter 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: page-enter 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   transform-origin: center top;
 }
 
 .page-is-transitioning .page-transition-shell {
-  animation: page-exit 0.3s ease forwards;
+  animation: page-exit 0.15s ease forwards;
   pointer-events: none;
 }
 
@@ -218,7 +218,7 @@ button {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   padding: 8px;
   z-index: 100;
-  animation: page-enter 0.15s ease-out;
+  animation: page-enter 0.1s ease-out;
 }
 
 .user-dropdown-header {
