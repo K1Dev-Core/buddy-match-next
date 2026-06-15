@@ -1,6 +1,7 @@
 import { CodeBackdrop } from "@/components/layout/code-backdrop";
 import { PageTransitionShell } from "@/components/layout/page-transition-shell";
 import { ChestPreloader } from "@/components/reveal/chest-preloader";
+import { DebugTool } from "@/components/shared/debug-tool";
 import { SoundProvider } from "@/components/shared/sound-provider";
 import { ToastProvider } from "@/components/shared/toaster";
 import type { Metadata } from "next";
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className={jakarta.className}>
         <ChestPreloader />
         <CodeBackdrop />
+        <Suspense><DebugTool /></Suspense>
         <ToastProvider>
           <SoundProvider>
           <Suspense fallback={children}>
