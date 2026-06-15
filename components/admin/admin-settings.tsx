@@ -19,6 +19,7 @@ export function AdminSettings() {
   const [juniorForm, setJuniorForm] = useState({ studentId: "", fullName: "", code4: "" });
   const [juniorFormLoading, setJuniorFormLoading] = useState(false);
   const [juniorSearch, setJuniorSearch] = useState("");
+  const [confirmModal, setConfirmModal] = useState<{ type: "allowlist" | "junior"; id: string; label: string } | null>(null);
 
   const filteredAllowlist = useMemo(() => {
     if (!allowlistSearch.trim()) return allowlist;
@@ -221,7 +222,7 @@ export function AdminSettings() {
                 {filteredAllowlist.map((id) => (
                   <div key={id} className="admin-allowlist-item">
                     <span>{id}</span>
-                    <button className="ghost-button danger small" onClick={() => removeFromAllowlist(id)}>
+                    <button className="ghost-button danger small" onClick={() => setConfirmModal({ type: "allowlist", id, label: id })}>
                       <Trash2 size={14} strokeWidth={2} />
                     </button>
                   </div>
@@ -296,9 +297,7 @@ export function AdminSettings() {
                     </div>
                     <button
                       className="ghost-button danger small"
-                      onClick={() => {
-                        if (confirm(`ลบข้อมูล ${j.fullName}?`)) deleteJunior(j.code4);
-                      }}
+                      onClick={() => setConfirmModal({ type: "junior", id: j.code4, label: j.fullName })}
                     >
                       <Trash2 size={14} strokeWidth={2} />
                     </button>
@@ -311,6 +310,34 @@ export function AdminSettings() {
             </p>
           </div>
         </details>
+
+        {confirmModal && (
+          <div className="modal-overlay" onClick={() => setConfirmModal(null)}>
+            <div className="admin-modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "400px", textAlign: "center" }}>
+              <h2 style={{ marginTop: 0 }}>ยืนยันการลบ</h2>
+              <p style={{ margin: "16px 0", lineHeight: 1.6 }}>
+                คุณแน่ใจหรือต้องการลบ<br />
+                <strong>{confirmModal.label}</strong>
+                {confirmModal.type === "junior" ? " ออกจากระบบ" : " ออกจาก allowlist"}?
+              </p>
+              <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+                <button className="ghost-button small" onClick={() => setConfirmModal(null)}>
+                  ยกเลิก
+                </button>
+                <button
+                  className="ghost-button danger small"
+                  onClick={() => {
+                    if (confirmModal.type === "allowlist") removeFromAllowlist(confirmModal.id);
+                    else deleteJunior(confirmModal.id);
+                    setConfirmModal(null);
+                  }}
+                >
+                  ลบ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
       <div className="admin-footer">
         <button className="ghost-button" onClick={() => navigate("/admin")}>
