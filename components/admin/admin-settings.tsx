@@ -3,8 +3,8 @@
 import { syncJuniorRecords } from "@/data/auth/juniors";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { useToast } from "@/components/shared/toaster";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Home, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Home, Plus, Search, Trash2, Users, GraduationCap } from "lucide-react";
 
 export function AdminSettings() {
   const { navigate } = usePageTransition();
@@ -13,10 +13,28 @@ export function AdminSettings() {
   const [allowlistInput, setAllowlistInput] = useState("");
   const [allowlistLoading, setAllowlistLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [allowlistSearch, setAllowlistSearch] = useState("");
   const [juniors, setJuniors] = useState<{ id: string; studentId: string; fullName: string; code4: string }[]>([]);
   const [juniorsLoading, setJuniorsLoading] = useState(false);
   const [juniorForm, setJuniorForm] = useState({ studentId: "", fullName: "", code4: "" });
   const [juniorFormLoading, setJuniorFormLoading] = useState(false);
+  const [juniorSearch, setJuniorSearch] = useState("");
+
+  const filteredAllowlist = useMemo(() => {
+    if (!allowlistSearch.trim()) return allowlist;
+    const q = allowlistSearch.trim().toLowerCase();
+    return allowlist.filter(id => id.toLowerCase().includes(q));
+  }, [allowlist, allowlistSearch]);
+
+  const filteredJuniors = useMemo(() => {
+    if (!juniorSearch.trim()) return juniors;
+    const q = juniorSearch.trim().toLowerCase();
+    return juniors.filter(j =>
+      j.fullName.toLowerCase().includes(q) ||
+      j.code4.toLowerCase().includes(q) ||
+      j.studentId.toLowerCase().includes(q)
+    );
+  }, [juniors, juniorSearch]);
 
   const fetchAllowlist = async () => {
     setAllowlistLoading(true);
@@ -181,17 +199,30 @@ export function AdminSettings() {
                 {addLoading ? "กำลังเพิ่ม..." : "เพิ่ม"}
               </button>
             </div>
+            {allowlist.length > 0 && (
+              <div className="admin-search" style={{ marginTop: "8px" }}>
+                <Search size={16} strokeWidth={2.2} />
+                <input
+                  className="admin-search-input"
+                  placeholder="ค้นหารหัสรุ่นพี่..."
+                  value={allowlistSearch}
+                  onChange={(e) => setAllowlistSearch(e.target.value)}
+                />
+              </div>
+            )}
             {allowlistLoading ? (
               <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
-            ) : allowlist.length === 0 ? (
-              <p className="admin-allowlist-empty">ยังไม่มีรายชื่อใน allowlist (ใช้เฉพาะ hardcoded list)</p>
+            ) : filteredAllowlist.length === 0 ? (
+              <p className="admin-allowlist-empty">
+                {allowlist.length === 0 ? "ยังไม่มีรายชื่อใน allowlist (ใช้เฉพาะ hardcoded list)" : "ไม่พบรายชื่อที่ค้นหา"}
+              </p>
             ) : (
               <div className="admin-allowlist-list">
-                {allowlist.map((id) => (
+                {filteredAllowlist.map((id) => (
                   <div key={id} className="admin-allowlist-item">
                     <span>{id}</span>
                     <button className="ghost-button danger small" onClick={() => removeFromAllowlist(id)}>
-                      <X size={14} strokeWidth={2} />
+                      <Trash2 size={14} strokeWidth={2} />
                     </button>
                   </div>
                 ))}
@@ -202,28 +233,28 @@ export function AdminSettings() {
 
         <details className="admin-allowlist-section">
           <summary className="admin-allowlist-summary">
-            <Users size={16} strokeWidth={2.2} />
+            <GraduationCap size={16} strokeWidth={2.2} />
             จัดการข้อมูลรุ่นน้อง ({juniors.length} คน)
           </summary>
           <div className="admin-allowlist-body">
-            <div className="admin-allowlist-input-row" style={{ flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+            <div className="admin-allowlist-input-row" style={{ flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "8px", width: "100%", flexWrap: "wrap" }}>
                 <input
                   className="admin-search-input"
                   placeholder="รหัสนิสิต 11 หลัก..."
                   value={juniorForm.studentId}
                   onChange={(e) => setJuniorForm(f => ({ ...f, studentId: e.target.value }))}
-                  style={{ flex: 1 }}
+                  style={{ flex: 1, minWidth: "160px" }}
                 />
                 <input
                   className="admin-search-input"
                   placeholder="เลขท้าย 4 หลัก..."
                   value={juniorForm.code4}
                   onChange={(e) => setJuniorForm(f => ({ ...f, code4: e.target.value }))}
-                  style={{ flex: 1 }}
+                  style={{ flex: 0, width: "130px" }}
                 />
               </div>
-              <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
                 <input
                   className="admin-search-input"
                   placeholder="ชื่อ-นามสกุล..."
@@ -238,15 +269,28 @@ export function AdminSettings() {
                 </button>
               </div>
             </div>
+            {juniors.length > 0 && (
+              <div className="admin-search" style={{ marginTop: "8px" }}>
+                <Search size={16} strokeWidth={2.2} />
+                <input
+                  className="admin-search-input"
+                  placeholder="ค้นหาชื่อ รหัสนิสิต หรือเลขท้าย..."
+                  value={juniorSearch}
+                  onChange={(e) => setJuniorSearch(e.target.value)}
+                />
+              </div>
+            )}
             {juniorsLoading ? (
               <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
-            ) : juniors.length === 0 ? (
-              <p className="admin-allowlist-empty">ยังไม่มีข้อมูลรุ่นน้องในฐานข้อมูล</p>
+            ) : filteredJuniors.length === 0 ? (
+              <p className="admin-allowlist-empty">
+                {juniors.length === 0 ? "ยังไม่มีข้อมูลรุ่นน้องในฐานข้อมูล" : "ไม่พบข้อมูลที่ค้นหา"}
+              </p>
             ) : (
-              <div className="admin-allowlist-list" style={{ maxHeight: "300px", overflowY: "auto" }}>
-                {juniors.map((j) => (
+              <div className="admin-allowlist-list" style={{ maxHeight: "360px", overflowY: "auto" }}>
+                {filteredJuniors.map((j) => (
                   <div key={j.id} className="admin-allowlist-item">
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 }}>
                       <span style={{ fontWeight: 600 }}>{j.fullName}</span>
                       <span style={{ fontSize: "0.8em", opacity: 0.6 }}>{j.studentId} · {j.code4}</span>
                     </div>
