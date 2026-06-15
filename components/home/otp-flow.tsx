@@ -100,37 +100,49 @@ export function OtpFlow() {
   return (
     <>
       <div className="entry-panel">
-        <div className="headline-stack">
-          <h1>กรอกรหัสสี่ตัวท้ายเพื่อหาพี่รหัส</h1>
-        </div>
-        <div className="otp-row">
-          {digits.map((digit, index) => (
-            <input
-              key={index}
-              ref={(node) => {
-                inputRefs.current[index] = node;
-              }}
-              className="otp-input"
-              value={digit}
-              onChange={(event) => updateDigit(index, event.target.value)}
-              onKeyDown={(event) => handleKeyDown(event, index)}
-              inputMode="numeric"
-              maxLength={1}
-              aria-label={`Digit ${index + 1}`}
-            />
-          ))}
-        </div>
-        <div className="action-stack">
-          <PrimaryButton
-            onClick={() => submit(joinedCode)}
-            disabled={!isReady || isLoading || matchingOpen === false}
-            fullWidth
-            icon={<Search size={18} strokeWidth={2.4} />}
-          >
-            {isLoading ? "กำลังตรวจสอบ..." : matchingOpen === null ? "กำลังโหลด..." : matchingOpen ? "ค้นหา" : "ระบบปิดอยู่"}
-          </PrimaryButton>
-        </div>
-        <SeniorCountBadge />
+        {matchingOpen === null ? (
+          <div>
+            <div className="skeleton-line" style={{ width: "70%", height: "24px", margin: "0 auto 24px" }} />
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginBottom: "24px" }}>
+              {[1,2,3,4].map(i => <div key={i} className="skeleton-block" style={{ width: "64px", height: "72px", borderRadius: "16px" }} />)}
+            </div>
+            <div className="skeleton-block" style={{ width: "100%", height: "52px", borderRadius: "44px" }} />
+          </div>
+        ) : (
+          <>
+            <div className="headline-stack">
+              <h1>กรอกรหัสสี่ตัวท้ายเพื่อหาพี่รหัส</h1>
+            </div>
+            <div className="otp-row">
+              {digits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(node) => {
+                    inputRefs.current[index] = node;
+                  }}
+                  className="otp-input"
+                  value={digit}
+                  onChange={(event) => updateDigit(index, event.target.value)}
+                  onKeyDown={(event) => handleKeyDown(event, index)}
+                  inputMode="numeric"
+                  maxLength={1}
+                  aria-label={`Digit ${index + 1}`}
+                />
+              ))}
+            </div>
+            <div className="action-stack">
+              <PrimaryButton
+                onClick={() => submit(joinedCode)}
+                disabled={!isReady || isLoading || matchingOpen === false}
+                fullWidth
+                icon={<Search size={18} strokeWidth={2.4} />}
+              >
+                {isLoading ? "กำลังตรวจสอบ..." : matchingOpen ? "ค้นหา" : "ระบบปิดอยู่"}
+              </PrimaryButton>
+            </div>
+            <SeniorCountBadge />
+          </>
+        )}
       </div>
       <JuniorConfirmModal
         candidate={candidate}

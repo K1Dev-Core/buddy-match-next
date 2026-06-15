@@ -202,7 +202,17 @@ export function AdminDashboard() {
         </div>
 
         {isLoading ? (
-          <div className="admin-loading">กำลังโหลดข้อมูล...</div>
+          <div>
+            <div className="skeleton-stats">
+              <div className="skeleton-stat" />
+              <div className="skeleton-stat" />
+              <div className="skeleton-stat" />
+            </div>
+            <div className="skeleton-search" />
+            <div className="skeleton-row" />
+            <div className="skeleton-row" />
+            <div className="skeleton-row" />
+          </div>
         ) : (
           <>
             <div className="admin-stats-grid">

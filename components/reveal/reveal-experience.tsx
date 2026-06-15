@@ -162,7 +162,11 @@ export function RevealExperience({ token }: RevealExperienceProps) {
   if (isValidating) {
     return (
       <section className="reveal-shell reveal-shell-centered">
-        <div className="admin-loading">กำลังตรวจสอบข้อมูล...</div>
+        <div style={{ width: "100%", maxWidth: "320px", margin: "0 auto" }}>
+          <div className="skeleton-block" style={{ height: "200px", marginBottom: "16px" }} />
+          <div className="skeleton-line" style={{ width: "60%" }} />
+          <div className="skeleton-line" style={{ width: "40%" }} />
+        </div>
       </section>
     );
   }

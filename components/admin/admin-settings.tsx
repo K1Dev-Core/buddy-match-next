@@ -212,7 +212,11 @@ export function AdminSettings() {
               </div>
             )}
             {allowlistLoading ? (
-              <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
+              <div style={{ padding: "8px 0" }}>
+                <div className="skeleton-row" />
+                <div className="skeleton-row" />
+                <div className="skeleton-row" style={{ width: "60%" }} />
+              </div>
             ) : filteredAllowlist.length === 0 ? (
               <p className="admin-allowlist-empty">
                 {allowlist.length === 0 ? "ยังไม่มีรายชื่อใน allowlist (ใช้เฉพาะ hardcoded list)" : "ไม่พบรายชื่อที่ค้นหา"}
@@ -282,7 +286,12 @@ export function AdminSettings() {
               </div>
             )}
             {juniorsLoading ? (
-              <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
+              <div style={{ padding: "8px 0" }}>
+                <div className="skeleton-row" />
+                <div className="skeleton-row" />
+                <div className="skeleton-row" />
+                <div className="skeleton-row" style={{ width: "45%" }} />
+              </div>
             ) : filteredJuniors.length === 0 ? (
               <p className="admin-allowlist-empty">
                 {juniors.length === 0 ? "ยังไม่มีข้อมูลรุ่นน้องในฐานข้อมูล" : "ไม่พบข้อมูลที่ค้นหา"}

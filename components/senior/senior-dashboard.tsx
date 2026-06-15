@@ -113,7 +113,10 @@ export function SeniorDashboard() {
     return (
       <main className="page-shell">
         <section className="site-shell senior-shell">
-          <div className="admin-loading">กำลังโหลดข้อมูล...</div>
+          <div className="skeleton-card" style={{ marginBottom: "16px" }} />
+          <div className="skeleton-line" style={{ width: "40%" }} />
+          <div className="skeleton-line" />
+          <div className="skeleton-line" style={{ width: "70%" }} />
         </section>
       </main>
     );
@@ -132,7 +135,19 @@ export function SeniorDashboard() {
             className={`senior-status-banner ${assignments.length > 0 ? "matched" : "waiting"}`}
           >
             {isLoadingAssignments ? (
-              <span>กำลังโหลด...</span>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
+                <div
+                  className="skeleton-line"
+                  style={{ width: "60%", height: "14px", margin: 0 }}
+                />
+              </div>
             ) : assignments.length > 0 ? (
               <>
                 <UserCheck size={22} strokeWidth={2.4} />
@@ -157,7 +172,7 @@ export function SeniorDashboard() {
           <h1>ตั้งค่าข้อมูลของคุณ (เพื่อแสดงตอนน้องทายชื่อถูก)</h1>
           <div className="senior-form-grid">
             <label className="senior-field">
-              <span>ชื่อพี่รหัส</span>
+              <span>ชื่อพี่รหัส(แก้ได้เป็นชื่อที่ไว้ให้น้องทาย)</span>
               <input
                 className="senior-input"
                 value={fullName}
@@ -234,7 +249,9 @@ export function SeniorDashboard() {
           ) : null}
           <button
             className="ghost-button danger"
-            onClick={() => { window.location.href = "/logout"; }}
+            onClick={() => {
+              window.location.href = "/logout";
+            }}
           >
             <LogOut size={18} strokeWidth={2} />
             ออกจากระบบ

@@ -2695,3 +2695,68 @@ button {
 .admin-toggle-switch.is-on .admin-toggle-knob {
   left: 25px;
 }
+
+/* ============================================
+   Skeleton loading shimmer
+   ============================================ */
+@keyframes skeleton-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-block {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+.skeleton-card {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 18px;
+  height: 120px;
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+  height: 16px;
+  margin-bottom: 8px;
+}
+
+.skeleton-row {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 14px;
+  height: 52px;
+  margin-bottom: 8px;
+}
+
+.skeleton-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.skeleton-stat {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 18px;
+  height: 88px;
+}
+
+.skeleton-search {
+  background: linear-gradient(90deg, #e8e5dc 25%, #f0ede4 50%, #e8e5dc 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border-radius: 12px;
+  height: 42px;
+  margin-bottom: 12px;
+}
