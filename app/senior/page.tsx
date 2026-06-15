@@ -13,7 +13,7 @@ export default async function SeniorPage() {
       const { data: { user } } = await supabase.auth.getUser();
       const email = user?.email ?? "";
 
-      if (!email || !isAllowedSeniorEmail(email)) {
+      if (!email || !(await isAllowedSeniorEmail(email, supabase))) {
         redirect("/?auth=unauthorized");
       }
     } catch {

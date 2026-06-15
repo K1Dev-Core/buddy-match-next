@@ -3,8 +3,9 @@
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
 import { useToast } from "@/components/shared/toaster";
-import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Download, Home, Lock, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users } from "lucide-react";
+import { playSound } from "@/lib/sound";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Download, Home, Lock, Plus, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users, X } from "lucide-react";
 
 type SeniorInfo = {
   id: string;
@@ -38,6 +39,10 @@ export function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<"all" | "assigned" | "free">("all");
   const [matchingOpen, setMatchingOpen] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [allowlist, setAllowlist] = useState<string[]>([]);
+  const [allowlistInput, setAllowlistInput] = useState("");
+  const [allowlistLoading, setAllowlistLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
 
   const loadData = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
@@ -76,6 +81,66 @@ export function AdminDashboard() {
     } finally {
       clearTimeout(timer);
       if (showSpinner) setIsLoading(false);
+    }
+
+    fetchAllowlist();
+  };
+
+  const fetchAllowlist = async () => {
+    setAllowlistLoading(true);
+    try {
+      const res = await fetch("/api/admin/allowlist");
+      if (res.ok) {
+        setAllowlist(await res.json());
+      }
+    } catch {} finally {
+      setAllowlistLoading(false);
+    }
+  };
+
+  const addToAllowlist = async () => {
+    const id = allowlistInput.trim();
+    if (!id || !/^\d{11}$/.test(id)) {
+      toast("กรุณากรอกรหัสนิสิต 11 หลัก", "error");
+      return;
+    }
+    setAddLoading(true);
+    try {
+      const res = await fetch("/api/admin/allowlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seniorId: id }),
+      });
+      if (res.ok) {
+        toast("เพิ่มรุ่นพี่เรียบร้อย", "success");
+        setAllowlistInput("");
+        fetchAllowlist();
+      } else {
+        const d = await res.json();
+        toast(d?.error || "เพิ่มไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("เพิ่มไม่สำเร็จ", "error");
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const removeFromAllowlist = async (id: string) => {
+    try {
+      const res = await fetch("/api/admin/allowlist", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seniorId: id }),
+      });
+      if (res.ok) {
+        toast("ลบรุ่นพี่ออกจาก allowlist แล้ว", "success");
+        fetchAllowlist();
+      } else {
+        toast("ลบไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("ลบไม่สำเร็จ", "error");
     }
   };
 
@@ -118,6 +183,7 @@ export function AdminDashboard() {
 
   const toggleMatching = async () => {
     setTogglingStatus(true);
+    playSound("/assets/sfx/3.wav");
     try {
       const res = await fetch("/api/admin/matching-status", {
         body: JSON.stringify({ open: !matchingOpen }),
@@ -179,7 +245,7 @@ export function AdminDashboard() {
   const exportCsv = () => {
     const a = document.createElement("a");
     a.href = "/api/admin/export";
-    a.download = "";
+    a.target = "_blank";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -248,6 +314,44 @@ export function AdminDashboard() {
               <Shield size={16} strokeWidth={2.2} />
               <span>คลิกที่รายชื่อพี่รหัสเพื่อดูข้อมูลเต็ม (คำใบ้ ข้อความต้อนรับ ช่องทางติดต่อ) — กดปุ่ม <span className="admin-tip-highlight">ลบ</span> เพื่อลบน้องรหัสออก ทำให้พี่คนนั้นกลับมาว่างอีกครั้ง</span>
             </div>
+
+            <details className="admin-allowlist-section">
+              <summary className="admin-allowlist-summary">
+                <Users size={16} strokeWidth={2.2} />
+                จัดการรายชื่อรุ่นพี่ที่อนุญาต ({allowlist.length} คน)
+              </summary>
+              <div className="admin-allowlist-body">
+                <div className="admin-allowlist-input-row">
+                  <input
+                    className="admin-search-input"
+                    placeholder="รหัสนิสิต 11 หลัก..."
+                    value={allowlistInput}
+                    onChange={(e) => setAllowlistInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addToAllowlist()}
+                  />
+                  <button className="ghost-button small" onClick={addToAllowlist} disabled={addLoading}>
+                    <Plus size={16} strokeWidth={2} />
+                    {addLoading ? "กำลังเพิ่ม..." : "เพิ่ม"}
+                  </button>
+                </div>
+                {allowlistLoading ? (
+                  <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
+                ) : allowlist.length === 0 ? (
+                  <p className="admin-allowlist-empty">ยังไม่มีรายชื่อใน allowlist (ใช้เฉพาะ hardcoded list)</p>
+                ) : (
+                  <div className="admin-allowlist-list">
+                    {allowlist.map((id) => (
+                      <div key={id} className="admin-allowlist-item">
+                        <span>{id}</span>
+                        <button className="ghost-button danger small" onClick={() => removeFromAllowlist(id)}>
+                          <X size={14} strokeWidth={2} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
 
             <div className="admin-toolbar">
               <div className="admin-search">

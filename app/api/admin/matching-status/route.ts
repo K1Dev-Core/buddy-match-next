@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    if (!isAllowedSeniorEmail(user.email)) {
+    if (!(await isAllowedSeniorEmail(user.email, supabase))) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

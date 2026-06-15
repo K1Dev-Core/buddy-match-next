@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     const email = user.email;
-    if (!isAllowedSeniorEmail(email)) {
+    if (!(await isAllowedSeniorEmail(email, supabase))) {
       return NextResponse.json(null, { status: 403 });
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     const email = user.email;
 
-    if (!isAllowedSeniorEmail(email)) {
+    if (!(await isAllowedSeniorEmail(email, supabase))) {
       return NextResponse.json(
         { message: "บัญชีนี้ไม่มีสิทธิ์ใช้ระบบรุ่นพี่" },
         { status: 403 }

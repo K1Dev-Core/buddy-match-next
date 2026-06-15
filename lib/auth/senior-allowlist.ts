@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 const rawSeniorIds = `
 67011212055
 68011212019
@@ -257,7 +259,10 @@ export const seniorAllowlist = new Set(
     .filter(Boolean),
 );
 
-export function isAllowedSeniorEmail(email: string) {
+export async function isAllowedSeniorEmail(
+  email: string,
+  supabase?: SupabaseClient,
+): Promise<boolean> {
   const normalized = email.trim().toLowerCase();
 
   if (!normalized.endsWith("@msu.ac.th")) {
@@ -265,5 +270,19 @@ export function isAllowedSeniorEmail(email: string) {
   }
 
   const localPart = normalized.replace("@msu.ac.th", "");
-  return seniorAllowlist.has(localPart);
+
+  if (seniorAllowlist.has(localPart)) return true;
+
+  if (supabase) {
+    try {
+      const { data } = await supabase
+        .from("senior_allowlist")
+        .select("id")
+        .eq("id", localPart)
+        .maybeSingle();
+      if (data) return true;
+    } catch {}
+  }
+
+  return false;
 }

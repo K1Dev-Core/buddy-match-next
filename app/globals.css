@@ -2272,6 +2272,84 @@ button {
   line-height: 1.5;
 }
 
+/* Allowlist section */
+.admin-allowlist-section {
+  margin-bottom: 16px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(28, 28, 24, 0.05);
+  overflow: hidden;
+}
+
+.admin-allowlist-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1c1c18;
+  user-select: none;
+}
+
+.admin-allowlist-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-allowlist-summary::before {
+  content: "▶";
+  font-size: 0.7rem;
+  color: #8a8a82;
+  transition: transform 0.2s;
+}
+
+.admin-allowlist-section[open] .admin-allowlist-summary::before {
+  transform: rotate(90deg);
+}
+
+.admin-allowlist-body {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-allowlist-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-allowlist-input-row .admin-search-input {
+  flex: 1;
+  background: #f5f0ea;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.admin-allowlist-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-allowlist-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f0ea;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  color: #1c1c18;
+}
+
+.admin-allowlist-empty {
+  font-size: 0.85rem;
+  color: #8a8a82;
+}
+
 /* Responsive admin */
 @media (max-width: 720px) {
   .admin-stats-grid {

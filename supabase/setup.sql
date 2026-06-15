@@ -329,7 +329,39 @@ end;
 $$;
 
 -- ============================================
--- 11. DISABLE RLS (ใช้ security definer RPC แทน)
+-- 11. RPC: senior allowlist management
+-- ============================================
+create or replace function public.add_senior_allowlist(p_id text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.senior_allowlist (id) values (p_id) on conflict do nothing;
+  return json_build_object('status', 'ok');
+end;
+$$;
+
+create or replace function public.remove_senior_allowlist(p_id text)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.senior_allowlist where id = p_id;
+  return json_build_object('status', 'ok');
+end;
+$$;
+
+-- allowlist table (admin-managed, supplements the hardcoded list)
+create table if not exists public.senior_allowlist (
+  id text primary key
+);
+
+-- ============================================
+-- 12. DISABLE RLS (ใช้ security definer RPC แทน)
 -- ============================================
 alter table public.seniors disable row level security;
 alter table public.assignments disable row level security;
@@ -351,3 +383,6 @@ grant execute on function public.clear_assignment(text) to anon;
 grant execute on function public.set_senior_admin(text, boolean) to anon;
 grant execute on function public.get_matching_open() to anon;
 grant execute on function public.set_matching_open(boolean) to anon;
+grant select on public.senior_allowlist to anon;
+grant execute on function public.add_senior_allowlist(text) to anon;
+grant execute on function public.remove_senior_allowlist(text) to anon;

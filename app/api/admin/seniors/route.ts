@@ -11,7 +11,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!isAllowedSeniorEmail(user.email)) {
+    if (!(await isAllowedSeniorEmail(user.email, supabase))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

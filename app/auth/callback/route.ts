@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
 
   const email = user.email;
 
-  if (!isAllowedSeniorEmail(email)) {
+  if (!(await isAllowedSeniorEmail(email, supabase))) {
     await supabase.auth.signOut();
     return NextResponse.redirect(
       new URL("/?auth=unauthorized", origin)

@@ -5,6 +5,7 @@ import { JuniorConfirmModal } from "@/components/home/junior-confirm-modal";
 import { PrimaryButton } from "@/components/shared/primary-button";
 import { SeniorCountBadge } from "@/components/home/senior-count-badge";
 import { usePageTransition } from "@/components/layout/use-page-transition";
+import { useToast } from "@/components/shared/toaster";
 import { encodeToken } from "@/lib/token";
 import { playSound } from "@/lib/sound";
 import { Search } from "lucide-react";
@@ -12,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 export function OtpFlow() {
   const { navigate } = usePageTransition();
+  const { toast } = useToast();
   const [digits, setDigits] = useState(["", "", "", ""]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,7 +83,11 @@ export function OtpFlow() {
 
       if (data && data.assignment) {
         sessionStorage.setItem("bm-senior", JSON.stringify(data));
-        navigate(`/reveal?t=${encodeToken(joinedCode, candidate.studentId)}`);
+        toast("คุณมีพี่รหัสอยู่แล้ว!", "info");
+        setTimeout(() =>
+          navigate(`/reveal?t=${encodeToken(joinedCode, candidate.studentId)}`),
+        1500,
+        );
       } else {
         navigate(`/matching?t=${token}`);
       }
