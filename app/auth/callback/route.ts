@@ -3,15 +3,6 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { sendWebhook } from "@/lib/webhook";
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_IDS = new Set([
-  "67011212055",
-  "68011212010",
-  "68011212008",
-  "68011212212",
-  "68011212050",
-  "68011212243",
-]);
-
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
@@ -43,7 +34,6 @@ export async function GET(request: NextRequest) {
   }
 
   const seniorId = email.replace("@msu.ac.th", "");
-  const isAdmin = ADMIN_IDS.has(seniorId);
 
   await supabase.rpc("upsert_senior_profile", {
     p_id: seniorId,
@@ -53,14 +43,9 @@ export async function GET(request: NextRequest) {
     p_greeting: ""
   });
 
-  if (isAdmin) {
-    await supabase.rpc("set_senior_admin", { p_id: seniorId, p_admin: true });
-  }
-
   sendWebhook("🔐 รุ่นพี่เข้าสู่ระบบ", [
     { name: "รหัสรุ่นพี่", value: seniorId, inline: true },
-    { name: "ชื่อ", value: user.user_metadata?.full_name ?? seniorId, inline: true },
-    { name: "เป็นแอดมิน", value: isAdmin ? "ใช่" : "ไม่", inline: true }
+    { name: "ชื่อ", value: user.user_metadata?.full_name ?? seniorId, inline: true }
   ]);
 
   return NextResponse.redirect(new URL(nextPath, origin));

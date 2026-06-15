@@ -934,3 +934,28 @@ export const juniorRecords: JuniorRecord[] = [
 ];
 
 export const juniorRecordsByCode4 = new Map(juniorRecords.map((record) => [record.code4, record]));
+
+let synced = false;
+
+export async function syncJuniorRecords(): Promise<Map<string, JuniorRecord>> {
+  if (synced) return juniorRecordsByCode4;
+  try {
+    const res = await fetch("/api/juniors");
+    if (!res.ok) return juniorRecordsByCode4;
+    const apiRecords: JuniorRecord[] = (await res.json()).map(
+      (r: { student_id: string; full_name: string; code4: string }) => ({
+        studentId: r.student_id,
+        fullName: r.full_name,
+        code4: r.code4,
+      }),
+    );
+    if (apiRecords.length > 0) {
+      juniorRecordsByCode4.clear();
+      for (const r of apiRecords) {
+        juniorRecordsByCode4.set(r.code4, r);
+      }
+      synced = true;
+    }
+  } catch {}
+  return juniorRecordsByCode4;
+}

@@ -360,6 +360,14 @@ create table if not exists public.senior_allowlist (
   id text primary key
 );
 
+-- junior records table (admin-managed, replaces hardcoded data/auth/juniors.ts)
+create table if not exists public.juniors (
+  id text primary key,
+  student_id text not null unique,
+  full_name text not null,
+  code4 text not null
+);
+
 -- ============================================
 -- 12. DISABLE RLS (ใช้ security definer RPC แทน)
 -- ============================================
@@ -386,3 +394,4 @@ grant execute on function public.set_matching_open(boolean) to anon;
 grant select on public.senior_allowlist to anon;
 grant execute on function public.add_senior_allowlist(text) to anon;
 grant execute on function public.remove_senior_allowlist(text) to anon;
+grant select, insert, update, delete on public.juniors to anon;

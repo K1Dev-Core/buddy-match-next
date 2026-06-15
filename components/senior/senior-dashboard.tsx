@@ -2,7 +2,7 @@
 
 import { PrimaryButton } from "@/components/shared/primary-button";
 import { useToast } from "@/components/shared/toaster";
-import { juniorRecordsByCode4 } from "@/data/auth/juniors";
+import { juniorRecordsByCode4, syncJuniorRecords } from "@/data/auth/juniors";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { Clock, Home, LogOut, Shield, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -34,6 +34,7 @@ export function SeniorDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        syncJuniorRecords();
         const [profileRes, assignRes] = await Promise.all([
           fetch("/api/senior/profile"),
           fetch("/api/senior/assignments"),

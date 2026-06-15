@@ -1,11 +1,11 @@
 "use client";
 
 import { usePageTransition } from "@/components/layout/use-page-transition";
-import { juniorRecordsByCode4 } from "@/data/auth/juniors";
+import { juniorRecordsByCode4, syncJuniorRecords } from "@/data/auth/juniors";
 import { useToast } from "@/components/shared/toaster";
 import { playSound } from "@/lib/sound";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Download, Home, Lock, Plus, Search, Shield, Trash2, Unlock, UserCheck, UserX, Users, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Download, Home, Plus, Search, Shield, Trash2, UserCheck, UserX, Users, X } from "lucide-react";
 
 type SeniorInfo = {
   id: string;
@@ -43,6 +43,11 @@ export function AdminDashboard() {
   const [allowlistInput, setAllowlistInput] = useState("");
   const [allowlistLoading, setAllowlistLoading] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
+  const [setAdminId, setSetAdminId] = useState<string | null>(null);
+  const [juniors, setJuniors] = useState<{ id: string; studentId: string; fullName: string; code4: string }[]>([]);
+  const [juniorsLoading, setJuniorsLoading] = useState(false);
+  const [juniorForm, setJuniorForm] = useState({ studentId: "", fullName: "", code4: "" });
+  const [juniorFormLoading, setJuniorFormLoading] = useState(false);
 
   const loadData = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
@@ -144,8 +149,96 @@ export function AdminDashboard() {
     }
   };
 
+  const toggleAdmin = async (seniorId: string, makeAdmin: boolean) => {
+    setSetAdminId(seniorId);
+    try {
+      const res = await fetch("/api/admin/set-admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seniorId, admin: makeAdmin }),
+      });
+      if (res.ok) {
+        toast(makeAdmin ? "ตั้งเป็นแอดมินแล้ว" : "ถอดแอดมินแล้ว", "success");
+        loadData(false);
+        if (selectedSenior?.id === seniorId) {
+          setSelectedSenior(prev => prev ? { ...prev, isAdmin: makeAdmin } : null);
+        }
+      } else {
+        toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
+    } finally {
+      setSetAdminId(null);
+    }
+  };
+
+  const fetchJuniors = async () => {
+    setJuniorsLoading(true);
+    try {
+      const res = await fetch("/api/juniors");
+      if (res.ok) setJuniors(await res.json());
+    } catch {} finally {
+      setJuniorsLoading(false);
+    }
+  };
+
+  const addJunior = async () => {
+    const { studentId, fullName, code4 } = juniorForm;
+    if (!studentId || !fullName || !code4) {
+      toast("กรุณากรอกข้อมูลให้ครบ", "error");
+      return;
+    }
+    if (!/^\d{11}$/.test(studentId)) {
+      toast("รหัสนิสิตต้อง 11 หลัก", "error");
+      return;
+    }
+    if (!/^\d{4}$/.test(code4)) {
+      toast("เลขท้ายต้อง 4 หลัก", "error");
+      return;
+    }
+    setJuniorFormLoading(true);
+    try {
+      const res = await fetch("/api/juniors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, fullName, code4 }),
+      });
+      if (res.ok) {
+        toast("เพิ่ม/แก้ไขข้อมูลรุ่นน้องสำเร็จ", "success");
+        setJuniorForm({ studentId: "", fullName: "", code4: "" });
+        fetchJuniors();
+        syncJuniorRecords();
+      } else {
+        const d = await res.json();
+        toast(d?.error || "บันทึกไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("บันทึกไม่สำเร็จ", "error");
+    } finally {
+      setJuniorFormLoading(false);
+    }
+  };
+
+  const deleteJunior = async (code4: string) => {
+    try {
+      const res = await fetch(`/api/juniors?code=${encodeURIComponent(code4)}`, { method: "DELETE" });
+      if (res.ok) {
+        toast("ลบข้อมูลรุ่นน้องแล้ว", "success");
+        fetchJuniors();
+        syncJuniorRecords();
+      } else {
+        toast("ลบไม่สำเร็จ", "error");
+      }
+    } catch {
+      toast("ลบไม่สำเร็จ", "error");
+    }
+  };
+
   useEffect(() => {
+    syncJuniorRecords();
     loadData(true);
+    fetchJuniors();
   }, []);
 
   const clearAssignment = async (seniorId: string) => {
@@ -353,6 +446,74 @@ export function AdminDashboard() {
               </div>
             </details>
 
+            <details className="admin-allowlist-section">
+              <summary className="admin-allowlist-summary">
+                <Users size={16} strokeWidth={2.2} />
+                จัดการข้อมูลรุ่นน้อง ({juniors.length} คน)
+              </summary>
+              <div className="admin-allowlist-body">
+                <div className="admin-allowlist-input-row" style={{ flexDirection: "column", gap: "6px" }}>
+                  <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+                    <input
+                      className="admin-search-input"
+                      placeholder="รหัสนิสิต 11 หลัก..."
+                      value={juniorForm.studentId}
+                      onChange={(e) => setJuniorForm(f => ({ ...f, studentId: e.target.value }))}
+                      style={{ flex: 1 }}
+                    />
+                    <input
+                      className="admin-search-input"
+                      placeholder="เลขท้าย 4 หลัก..."
+                      value={juniorForm.code4}
+                      onChange={(e) => setJuniorForm(f => ({ ...f, code4: e.target.value }))}
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+                    <input
+                      className="admin-search-input"
+                      placeholder="ชื่อ-นามสกุล..."
+                      value={juniorForm.fullName}
+                      onChange={(e) => setJuniorForm(f => ({ ...f, fullName: e.target.value }))}
+                      style={{ flex: 1 }}
+                      onKeyDown={(e) => e.key === "Enter" && addJunior()}
+                    />
+                    <button className="ghost-button small" onClick={addJunior} disabled={juniorFormLoading}>
+                      <Plus size={16} strokeWidth={2} />
+                      {juniorFormLoading ? "กำลังบันทึก..." : "เพิ่ม/แก้ไข"}
+                    </button>
+                  </div>
+                </div>
+                {juniorsLoading ? (
+                  <div className="admin-loading" style={{ padding: "8px 0" }}>กำลังโหลด...</div>
+                ) : juniors.length === 0 ? (
+                  <p className="admin-allowlist-empty">ยังไม่มีข้อมูลรุ่นน้องในฐานข้อมูล</p>
+                ) : (
+                  <div className="admin-allowlist-list" style={{ maxHeight: "300px", overflowY: "auto" }}>
+                    {juniors.map((j) => (
+                      <div key={j.id} className="admin-allowlist-item">
+                        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                          <span style={{ fontWeight: 600 }}>{j.fullName}</span>
+                          <span style={{ fontSize: "0.8em", opacity: 0.6 }}>{j.studentId} · {j.code4}</span>
+                        </div>
+                        <button
+                          className="ghost-button danger small"
+                          onClick={() => {
+                            if (confirm(`ลบข้อมูล ${j.fullName}?`)) deleteJunior(j.code4);
+                          }}
+                        >
+                          <Trash2 size={14} strokeWidth={2} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="admin-allowlist-empty" style={{ marginTop: "6px", fontSize: "0.85em" }}>
+                  ใช้ปุ่ม "เพิ่ม/แก้ไข" เพื่อเพิ่มน้องใหม่ หรือแก้ไขข้อมูลน้องที่มีรหัส 11 หลักซ้ำกัน
+                </p>
+              </div>
+            </details>
+
             <div className="admin-toolbar">
               <div className="admin-search">
                 <Search size={16} strokeWidth={2.2} />
@@ -454,9 +615,25 @@ export function AdminDashboard() {
                       ปิด
                     </button>
                   </div>
-                  {selectedSenior.isAdmin ? (
-                    <span className="admin-badge">แอดมิน</span>
-                  ) : null}
+                  <div className="admin-detail-actions">
+                    {selectedSenior.isAdmin ? (
+                      <button
+                        className="ghost-button danger small"
+                        disabled={setAdminId === selectedSenior.id}
+                        onClick={() => toggleAdmin(selectedSenior.id, false)}
+                      >
+                        {setAdminId === selectedSenior.id ? "กำลังเปลี่ยน..." : "ถอดแอดมิน"}
+                      </button>
+                    ) : (
+                      <button
+                        className="ghost-button small"
+                        disabled={setAdminId === selectedSenior.id}
+                        onClick={() => toggleAdmin(selectedSenior.id, true)}
+                      >
+                        {setAdminId === selectedSenior.id ? "กำลังเปลี่ยน..." : "ให้เป็นแอดมิน"}
+                      </button>
+                    )}
+                  </div>
                   <div className="admin-detail-grid">
                     <div className="admin-detail-field">
                       <span className="admin-detail-label">รหัสนักศึกษา</span>

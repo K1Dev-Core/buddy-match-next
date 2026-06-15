@@ -1,6 +1,6 @@
 "use client";
 
-import { juniorRecordsByCode4 } from "@/data/auth/juniors";
+import { juniorRecordsByCode4, syncJuniorRecords } from "@/data/auth/juniors";
 import { JuniorConfirmModal } from "@/components/home/junior-confirm-modal";
 import { PrimaryButton } from "@/components/shared/primary-button";
 import { SeniorCountBadge } from "@/components/home/senior-count-badge";
@@ -32,6 +32,7 @@ export function OtpFlow() {
   const isReady = joinedCode.length === 4;
 
   useEffect(() => {
+    syncJuniorRecords();
     fetch("/api/match/status")
       .then((r) => r.json())
       .then((d) => setMatchingOpen(d.open !== false))
