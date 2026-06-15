@@ -39,8 +39,6 @@ export function AdminDashboard() {
   const [filterStatus, setFilterStatus] = useState<"all" | "assigned" | "free">("all");
   const [matchingOpen, setMatchingOpen] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
-  const [setAdminId, setSetAdminId] = useState<string | null>(null);
-
   const loadData = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
 
@@ -78,31 +76,6 @@ export function AdminDashboard() {
     } finally {
       clearTimeout(timer);
       if (showSpinner) setIsLoading(false);
-    }
-  };
-
-  const toggleAdmin = async (seniorId: string, makeAdmin: boolean) => {
-    setSetAdminId(seniorId);
-    try {
-      const res = await fetch("/api/admin/set-admin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seniorId, admin: makeAdmin }),
-      });
-      if (res.ok) {
-        toast(makeAdmin ? "ตั้งเป็นแอดมินแล้ว" : "ถอดแอดมินแล้ว", "success");
-        sessionStorage.removeItem("bm-admin-cache");
-        loadData(false);
-        if (selectedSenior?.id === seniorId) {
-          setSelectedSenior(prev => prev ? { ...prev, isAdmin: makeAdmin } : null);
-        }
-      } else {
-        toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
-      }
-    } catch {
-      toast("เปลี่ยนสถานะไม่สำเร็จ", "error");
-    } finally {
-      setSetAdminId(null);
     }
   };
 
@@ -384,25 +357,6 @@ export function AdminDashboard() {
                     <button className="ghost-button small" onClick={() => setSelectedSenior(null)}>
                       ปิด
                     </button>
-                  </div>
-                  <div className="admin-detail-actions">
-                    {selectedSenior.isAdmin ? (
-                      <button
-                        className="ghost-button danger small"
-                        disabled={setAdminId === selectedSenior.id}
-                        onClick={() => toggleAdmin(selectedSenior.id, false)}
-                      >
-                        {setAdminId === selectedSenior.id ? "กำลังเปลี่ยน..." : "ถอดแอดมิน"}
-                      </button>
-                    ) : (
-                      <button
-                        className="ghost-button small"
-                        disabled={setAdminId === selectedSenior.id}
-                        onClick={() => toggleAdmin(selectedSenior.id, true)}
-                      >
-                        {setAdminId === selectedSenior.id ? "กำลังเปลี่ยน..." : "ให้เป็นแอดมิน"}
-                      </button>
-                    )}
                   </div>
                   <div className="admin-detail-grid">
                     <div className="admin-detail-field">

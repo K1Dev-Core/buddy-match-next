@@ -373,6 +373,8 @@ create table if not exists public.juniors (
 -- ============================================
 alter table public.seniors disable row level security;
 alter table public.assignments disable row level security;
+alter table public.juniors disable row level security;
+alter table public.senior_allowlist disable row level security;
 
 -- ============================================
 -- 12. GRANT PERMISSIONS

@@ -78,7 +78,15 @@ export function AdminSettings() {
     setJuniorsLoading(true);
     try {
       const res = await fetch("/api/juniors");
-      if (res.ok) setJuniors(await res.json());
+      if (res.ok) {
+        const raw = await res.json();
+        setJuniors(raw.map((r: Record<string, unknown>) => ({
+          id: r.id as string,
+          studentId: r.student_id as string,
+          fullName: r.full_name as string,
+          code4: r.code4 as string,
+        })));
+      }
     } catch {} finally {
       setJuniorsLoading(false);
     }
