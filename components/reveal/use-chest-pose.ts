@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type ChestPose = {
   orbitYaw: number;
@@ -43,12 +43,19 @@ export function useChestPose() {
     setReady(true);
   }, []);
 
-  useEffect(() => {
-    if (!ready) {
-      return;
-    }
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    window.localStorage.setItem(storageKey, JSON.stringify(pose));
+  useEffect(() => {
+    if (!ready) return;
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      window.localStorage.setItem(storageKey, JSON.stringify(pose));
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [pose, ready]);
 
   const exportValue = useMemo(() => JSON.stringify(pose, null, 2), [pose]);

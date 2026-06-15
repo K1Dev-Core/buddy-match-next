@@ -24,21 +24,17 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await getSupabaseServerClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error) {
+  if (error || !user?.email) {
     return NextResponse.redirect(
       new URL("/?auth=exchange_failed", origin)
     );
   }
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const email = user.email;
 
-  const email = user?.email ?? "";
-
-  if (!email || !isAllowedSeniorEmail(email)) {
+  if (!isAllowedSeniorEmail(email)) {
     await supabase.auth.signOut();
     return NextResponse.redirect(
       new URL("/?auth=unauthorized", origin)
@@ -50,7 +46,7 @@ export async function GET(request: NextRequest) {
 
   await supabase.rpc("upsert_senior_profile", {
     p_id: seniorId,
-    p_full_name: user?.user_metadata?.full_name ?? seniorId,
+    p_full_name: user.user_metadata?.full_name ?? seniorId,
     p_contact: "",
     p_hints: [],
     p_greeting: ""

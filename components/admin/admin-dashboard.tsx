@@ -1,6 +1,5 @@
 "use client";
 
-import { PrimaryButton } from "@/components/shared/primary-button";
 import { usePageTransition } from "@/components/layout/use-page-transition";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
 import { useToast } from "@/components/shared/toaster";
@@ -42,11 +41,14 @@ export function AdminDashboard() {
 
   const loadData = async (showSpinner = false) => {
     if (showSpinner) setIsLoading(true);
+
     const cache = sessionStorage.getItem("bm-admin-cache");
     const cacheData = cache ? JSON.parse(cache) : null;
-    if (cacheData && !showSpinner) {
+    const cacheAge = cacheData?.ts ? Date.now() - cacheData.ts : Infinity;
+    if (cacheData && !showSpinner && cacheAge < 30000) {
       setSeniors(cacheData.seniors);
       setMatchingOpen(cacheData.matchingOpen);
+      if (showSpinner) setIsLoading(false);
       return;
     }
 
@@ -67,7 +69,7 @@ export function AdminDashboard() {
         const raw = await seniorsRes.json();
         const data = Array.isArray(raw) ? raw : [];
         setSeniors(data);
-        sessionStorage.setItem("bm-admin-cache", JSON.stringify({ seniors: data, matchingOpen: true }));
+        sessionStorage.setItem("bm-admin-cache", JSON.stringify({ ts: Date.now(), seniors: data, matchingOpen }));
       }
     } catch {
       if (!cacheData) toast("โหลดข้อมูลไม่สำเร็จ", "error");

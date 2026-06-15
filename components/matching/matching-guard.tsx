@@ -114,7 +114,7 @@ export function MatchingGuard({ token }: MatchingGuardProps) {
       abort.abort();
       clearTimeout(timer);
     };
-  }, [code, juniorId, navigate]);
+  }, [code, juniorId]);
 
   if (matchingState.status === "loading") {
     return null;

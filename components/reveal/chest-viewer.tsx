@@ -2,13 +2,14 @@
 
 import { ensureModelViewerLoaded } from "@/components/reveal/model-viewer-loader";
 import { ChestPose, defaultChestPose } from "@/components/reveal/use-chest-pose";
-import { HTMLAttributes, useEffect, useId, useState } from "react";
+import { HTMLAttributes, useEffect, useRef, useState } from "react";
 
 declare global {
   namespace React {
     namespace JSX {
       interface IntrinsicElements {
         "model-viewer": HTMLAttributes<HTMLElement> & {
+          ref?: React.Ref<HTMLElement>;
           alt?: string;
           ar?: boolean | string;
           "auto-rotate"?: boolean | string;
@@ -47,7 +48,7 @@ export function ChestViewer({
   pose = defaultChestPose,
   state = "idle"
 }: ChestViewerProps) {
-  const viewerId = useId();
+  const viewerRef = useRef<ModelViewerElement | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -71,15 +72,10 @@ export function ChestViewer({
   }, []);
 
   useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
-    const viewer = document.getElementById(viewerId) as ModelViewerElement | null;
-
-    if (!viewer) {
-      return;
-    }
+    const viewer = viewerRef.current;
+    if (!viewer) return;
 
     if (state === "idle") {
       viewer.pause?.();
@@ -94,7 +90,7 @@ export function ChestViewer({
     }
 
     viewer.pause?.();
-  }, [isLoaded, state, viewerId]);
+  }, [isLoaded, state]);
 
   return (
     <div className={`chest-viewer-shell chest-state-${state} ${className}`.trim()}>
@@ -109,20 +105,19 @@ export function ChestViewer({
         }
       >
         {!isLoaded ? <div className="chest-loading-poster" /> : null}
-        {isLoaded ? (
-          <model-viewer
-            id={viewerId}
-            className="chest-model-viewer"
-            src="/assets/minecraft_chest/scene.gltf"
-            alt="Minecraft chest"
-            shadow-intensity="1"
-            exposure="1.1"
-            camera-controls={false}
-            interaction-prompt="none"
-            camera-orbit={`${pose.orbitYaw}deg ${pose.orbitPitch}deg ${pose.orbitRadius}m`}
-            orientation={`${pose.orientationX}deg ${pose.orientationY}deg ${pose.orientationZ}deg`}
-          />
-        ) : null}
+        <model-viewer
+          ref={viewerRef}
+          className="chest-model-viewer"
+          src="/assets/minecraft_chest/scene.gltf"
+          alt="Minecraft chest"
+          shadow-intensity="1"
+          exposure="1.1"
+          camera-controls={false}
+          interaction-prompt="none"
+          camera-orbit={`${pose.orbitYaw}deg ${pose.orbitPitch}deg ${pose.orbitRadius}m`}
+          orientation={`${pose.orientationX}deg ${pose.orientationY}deg ${pose.orientationZ}deg`}
+          style={{ opacity: isLoaded ? 1 : 0 }}
+        />
       </div>
     </div>
   );

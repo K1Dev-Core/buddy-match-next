@@ -7,6 +7,7 @@ export function SeniorCountBadge() {
   const [displayCount, setDisplayCount] = useState(0);
   const targetRef = useRef(0);
   const rafRef = useRef<number>(0);
+  const displayRef = useRef(0);
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -27,7 +28,7 @@ export function SeniorCountBadge() {
 
   function animateTo(target: number) {
     targetRef.current = target;
-    const start = displayCount;
+    const start = displayRef.current;
     const diff = target - start;
     if (diff === 0) return;
 
@@ -41,11 +42,13 @@ export function SeniorCountBadge() {
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       const current = Math.round(start + diff * eased);
+      displayRef.current = current;
       setDisplayCount(current);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(tick);
       } else {
+        displayRef.current = target;
         setDisplayCount(target);
       }
     }
@@ -58,7 +61,7 @@ export function SeniorCountBadge() {
       <Users size={16} strokeWidth={2.2} />
       <span>
         มีรุ่นพี่พร้อมรับน้อง{" "}
-        <span className="count-num" key={displayCount}>
+        <span className="count-num">
           {displayCount}
         </span>{" "}
         คน

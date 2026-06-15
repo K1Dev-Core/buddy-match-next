@@ -59,12 +59,6 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
     setTimeout(onDismiss, 200);
   };
 
-  useEffect(() => {
-    const timer = setTimeout(handleDismiss, 3200);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div className={`toast toast-${toast.type} ${exiting ? "toast-exit" : ""}`} onClick={handleDismiss}>
       <span>{toast.message}</span>

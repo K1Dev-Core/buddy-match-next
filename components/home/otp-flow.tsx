@@ -17,6 +17,14 @@ export function OtpFlow() {
   const [isLoading, setIsLoading] = useState(false);
   const [matchingOpen, setMatchingOpen] = useState<boolean | null>(null);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const soundThrottleRef = useRef(0);
+
+  const playSoundThrottled = (path: string) => {
+    const now = Date.now();
+    if (now - soundThrottleRef.current < 100) return;
+    soundThrottleRef.current = now;
+    playSound(path);
+  };
 
   const joinedCode = useMemo(() => digits.join(""), [digits]);
   const isReady = joinedCode.length === 4;
@@ -38,7 +46,7 @@ export function OtpFlow() {
     nextDigits[index] = nextValue;
     setDigits(nextDigits);
     if (nextValue) {
-      playSound("/assets/sfx/4.wav");
+      playSoundThrottled("/assets/sfx/4.wav");
       if (index < inputRefs.current.length - 1) {
         inputRefs.current[index + 1]?.focus();
       }
@@ -50,7 +58,7 @@ export function OtpFlow() {
     index: number,
   ) => {
     if (event.key === "Backspace" && !digits[index] && index > 0) {
-      playSound("/assets/sfx/4.wav");
+      playSoundThrottled("/assets/sfx/4.wav");
       inputRefs.current[index - 1]?.focus();
     }
   };

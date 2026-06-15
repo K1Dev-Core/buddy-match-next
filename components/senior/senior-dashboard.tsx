@@ -25,6 +25,7 @@ export function SeniorDashboard() {
   const [hints, setHints] = useState(starterHints);
   const [savedAt, setSavedAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [assignments, setAssignments] = useState<JuniorAssignment[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
@@ -62,6 +63,7 @@ export function SeniorDashboard() {
       } catch {
         /* ignore */
       } finally {
+        setIsLoading(false);
         setIsLoadingAssignments(false);
       }
     };
@@ -106,6 +108,16 @@ export function SeniorDashboard() {
     const record = juniorRecordsByCode4.get(code4);
     return record ? record.fullName.replace(/^(นาย|นางสาว)/, "").trim() : null;
   };
+
+  if (isLoading) {
+    return (
+      <main className="page-shell">
+        <section className="site-shell senior-shell">
+          <div className="admin-loading">กำลังโหลดข้อมูล...</div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="page-shell">
