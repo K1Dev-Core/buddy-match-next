@@ -10,7 +10,7 @@ export function usePageTransition() {
     document.body.classList.add("page-is-transitioning");
     window.setTimeout(() => {
       router.push(href);
-    }, 120);
+    }, 50);
   }, [router]);
 
   return { navigate };
