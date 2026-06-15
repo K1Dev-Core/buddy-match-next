@@ -48,8 +48,8 @@ body {
 }
 
 .page-is-transitioning .page-transition-shell {
-  animation: page-exit 0.08s ease forwards;
-  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.04s;
 }
 
 .code-backdrop {

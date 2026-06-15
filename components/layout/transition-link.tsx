@@ -19,11 +19,7 @@ export function TransitionLink({
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    document.body.classList.add("page-is-transitioning");
-
-    window.setTimeout(() => {
-      router.push(typeof href === "string" ? href : href.toString());
-    }, 260);
+    router.push(typeof href === "string" ? href : href.toString());
   };
 
   return (

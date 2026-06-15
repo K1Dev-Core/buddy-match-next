@@ -7,10 +7,7 @@ export function usePageTransition() {
   const router = useRouter();
 
   const navigate = useCallback((href: string) => {
-    document.body.classList.add("page-is-transitioning");
-    window.setTimeout(() => {
-      router.push(href);
-    }, 50);
+    router.push(href);
   }, [router]);
 
   return { navigate };
