@@ -1,5 +1,6 @@
 import { isAllowedSeniorEmail } from "@/lib/auth/senior-allowlist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { sendWebhook } from "@/lib/webhook";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -40,6 +41,11 @@ export async function POST(request: NextRequest) {
     if (error) {
       return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
+
+    sendWebhook("🗑️ แอดมินลบสายรหัส", [
+      { name: "แอดมิน", value: seniorId, inline: true },
+      { name: "พี่รหัสที่ถูกลบ", value: targetSeniorId, inline: true }
+    ], 0xe74c3c);
 
     return NextResponse.json({ status: "ok" });
   } catch {

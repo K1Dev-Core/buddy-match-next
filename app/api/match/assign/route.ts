@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { sendWebhook } from "@/lib/webhook";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -25,6 +26,15 @@ export async function POST(request: NextRequest) {
         { message: error.message, status: "rpc_error" },
         { status: 500 }
       );
+    }
+
+    if (data?.profile?.seniorId) {
+      sendWebhook("🎲 น้องกดสุ่มพี่รหัส", [
+        { name: "รหัสน้อง (4 หลัก)", value: juniorCode4, inline: true },
+        { name: "รหัสน้องเต็ม", value: juniorId, inline: true },
+        { name: "พี่รหัสที่สุ่มได้", value: String(data.profile.seniorId), inline: true },
+        { name: "ชื่อพี่รหัส", value: String(data.profile.fullName ?? "-"), inline: true }
+      ]);
     }
 
     return NextResponse.json(data ?? null);

@@ -4,7 +4,6 @@ import { PrimaryButton } from "@/components/shared/primary-button";
 import { useToast } from "@/components/shared/toaster";
 import { juniorRecordsByCode4 } from "@/data/auth/juniors";
 import { usePageTransition } from "@/components/layout/use-page-transition";
-import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { Clock, Home, LogOut, Shield, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -234,11 +233,7 @@ export function SeniorDashboard() {
           ) : null}
           <button
             className="ghost-button danger"
-            onClick={async () => {
-              const supabase = getSupabaseBrowserClient();
-              await supabase.auth.signOut();
-              window.location.href = "/";
-            }}
+            onClick={() => { window.location.href = "/logout"; }}
           >
             <LogOut size={18} strokeWidth={2} />
             ออกจากระบบ

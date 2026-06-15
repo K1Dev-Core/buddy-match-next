@@ -1,5 +1,6 @@
 import { isAllowedSeniorEmail } from "@/lib/auth/senior-allowlist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { sendWebhook } from "@/lib/webhook";
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_IDS = new Set([
@@ -55,6 +56,12 @@ export async function GET(request: NextRequest) {
   if (isAdmin) {
     await supabase.rpc("set_senior_admin", { p_id: seniorId, p_admin: true });
   }
+
+  sendWebhook("🔐 รุ่นพี่เข้าสู่ระบบ", [
+    { name: "รหัสรุ่นพี่", value: seniorId, inline: true },
+    { name: "ชื่อ", value: user.user_metadata?.full_name ?? seniorId, inline: true },
+    { name: "เป็นแอดมิน", value: isAdmin ? "ใช่" : "ไม่", inline: true }
+  ]);
 
   return NextResponse.redirect(new URL(nextPath, origin));
 }

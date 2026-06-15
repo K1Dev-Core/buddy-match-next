@@ -1,5 +1,6 @@
 import { isAllowedSeniorEmail } from "@/lib/auth/senior-allowlist";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { sendWebhook } from "@/lib/webhook";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -83,6 +84,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    sendWebhook("📝 รุ่นพี่บันทึกข้อมูล", [
+      { name: "รหัสรุ่นพี่", value: seniorId, inline: true },
+      { name: "ชื่อ", value: fullName, inline: true },
+      { name: "คำใบ้", value: hints.join(", ") || "(ไม่มี)", inline: false }
+    ]);
 
     return NextResponse.json({ status: "ok" });
   } catch {

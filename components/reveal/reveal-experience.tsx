@@ -142,6 +142,17 @@ export function RevealExperience({ token }: RevealExperienceProps) {
       setRevealed(true);
       setErrorMessage("");
       setIsModalOpen(false);
+      if (decoded?.juniorId && profile?.seniorId) {
+        fetch("/api/log/guess", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            juniorId: decoded.juniorId,
+            seniorId: profile.seniorId,
+            seniorName: fullName
+          })
+        }).catch(() => {});
+      }
       return;
     }
 
